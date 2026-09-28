@@ -114,9 +114,7 @@ MERCHANTS = [
 
 
 def get_system_account(db: Session, number: str) -> Account:
-    account = db.execute(
-        select(Account).where(Account.account_number == number)
-    ).scalar_one_or_none()
+    account = db.execute(select(Account).where(Account.account_number == number)).scalar_one_or_none()
     if account is None:
         raise RuntimeError(f"system account {number} is missing; run the seed")
     return account
@@ -324,9 +322,7 @@ def seed_customer(db: Session, spec: SeedCustomer) -> Customer:
         db.add(customer)
         db.flush()
     for acc in spec.accounts:
-        account = db.execute(
-            select(Account).where(Account.account_number == acc.number)
-        ).scalar_one_or_none()
+        account = db.execute(select(Account).where(Account.account_number == acc.number)).scalar_one_or_none()
         if account is None:
             account = Account(
                 customer_id=customer.id,

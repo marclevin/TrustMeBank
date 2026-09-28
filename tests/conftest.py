@@ -78,6 +78,7 @@ def csrf_from(html: str) -> str:
 
 
 def login(client: TestClient, email: str = ALICE[0], password: str = ALICE[1]) -> None:
+    client.cookies.clear()  # start a fresh browser session
     page = client.get("/login")
     response = client.post(
         "/login", data={"email": email, "password": password, "csrf": csrf_from(page.text)}
@@ -118,15 +119,27 @@ def authorize(
     """Drive the consent screen as a logged-in customer. Returns the redirect Location."""
     url = build_redirect(
         "/oauth/authorize",
-        {"response_type": "code", "client_id": application.id, "redirect_uri": redirect_uri,
-         "scope": scopes, "state": state},
+        {
+            "response_type": "code",
+            "client_id": application.id,
+            "redirect_uri": redirect_uri,
+            "scope": scopes,
+            "state": state,
+        },
     )
     page = client.get(url)
     assert page.status_code == 200, page.text
     response = client.post(
         "/oauth/authorize",
-        data={"decision": decision, "client_id": application.id, "redirect_uri": redirect_uri,
-              "response_type": "code", "scope": scopes, "state": state, "csrf": csrf_from(page.text)},
+        data={
+            "decision": decision,
+            "client_id": application.id,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": scopes,
+            "state": state,
+            "csrf": csrf_from(page.text),
+        },
     )
     assert response.status_code == 303, response.text
     return response.headers["location"]
@@ -136,20 +149,36 @@ def query_of(url: str) -> dict[str, str]:
     return {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
 
 
-def exchange(api: TestClient, application: Application, secret: str, code: str,
-             redirect_uri: str = "http://localhost:5000/callback") -> dict:
+def exchange(
+    api: TestClient,
+    application: Application,
+    secret: str,
+    code: str,
+    redirect_uri: str = "http://localhost:5000/callback",
+) -> dict:
     response = api.post(
         "/oauth/token",
-        data={"grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri,
-              "client_id": application.id, "client_secret": secret},
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirect_uri,
+            "client_id": application.id,
+            "client_secret": secret,
+        },
     )
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def get_token(client: TestClient, api: TestClient, application: Application, secret: str,
-              scopes: str = "accounts balances transactions payments",
-              email: str = ALICE[0], password: str = ALICE[1]) -> dict:
+def get_token(
+    client: TestClient,
+    api: TestClient,
+    application: Application,
+    secret: str,
+    scopes: str = "accounts balances transactions payments",
+    email: str = ALICE[0],
+    password: str = ALICE[1],
+) -> dict:
     """Log in, consent and exchange. Returns the token response."""
     login(client, email, password)
     location = authorize(client, application, scopes=scopes)

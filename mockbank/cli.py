@@ -61,7 +61,9 @@ def create_app(
     redirect_uri: list[str] = typer.Option(..., help="Registered redirect URI (repeatable)"),
     webhook_url: str | None = typer.Option(None),
     owner: str = typer.Option("", help="Team label"),
-    settlement_email: str | None = typer.Option(None, help="Also create a business customer and settlement account"),
+    settlement_email: str | None = typer.Option(
+        None, help="Also create a business customer and settlement account"
+    ),
     settlement_balance: str = typer.Option("0.00"),
 ) -> None:
     """Register a student application and print its credentials."""
@@ -71,7 +73,11 @@ def create_app(
 
     with new_session() as db:
         result = admin_service.register_application(
-            db, name=name, owner_label=owner, redirect_uris=redirect_uri, webhook_url=webhook_url,
+            db,
+            name=name,
+            owner_label=owner,
+            redirect_uris=redirect_uri,
+            webhook_url=webhook_url,
             settlement_email=settlement_email,
             settlement_opening_balance=parse_amount(settlement_balance, allow_zero=True),
         )

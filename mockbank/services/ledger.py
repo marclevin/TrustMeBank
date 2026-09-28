@@ -91,9 +91,7 @@ def post_transfer(
     if new_debit_balance < 0 and not (
         debit_account.allow_overdraft or get_settings().allow_negative_balances
     ):
-        raise InsufficientFunds(
-            f"account {debit_account.account_number} has insufficient funds"
-        )
+        raise InsufficientFunds(f"account {debit_account.account_number} has insufficient funds")
     new_credit_balance = credit_account.balance + amount
 
     when = booked_at or utcnow()

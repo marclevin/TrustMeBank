@@ -6,6 +6,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2AuthorizationCodeBearer
 from sqlalchemy.orm import Session
 
+from mockbank.config import get_settings
 from mockbank.db import get_db
 from mockbank.errors import APIError
 from mockbank.services.oauth import SCOPES, AuthContext, TokenInvalid, resolve_access_token
@@ -14,8 +15,8 @@ from mockbank.services.oauth import SCOPES, AuthContext, TokenInvalid, resolve_a
 # OAuth flow. Only one Authorization header ever arrives; both schemes read it.
 bearer_scheme = HTTPBearer(auto_error=False, description="Paste an access token (mbat_...)")
 oauth_scheme = OAuth2AuthorizationCodeBearer(
-    authorizationUrl="/oauth/authorize",
-    tokenUrl="/oauth/token",
+    authorizationUrl=f"{get_settings().base_url}/oauth/authorize",
+    tokenUrl=f"{get_settings().base_url}/oauth/token",
     scopes=SCOPES,
     auto_error=False,
     description="Run the full Authorization Code flow from this page",

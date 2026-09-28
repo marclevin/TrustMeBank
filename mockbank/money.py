@@ -14,7 +14,7 @@ class InvalidAmount(ValueError):
 def parse_amount(value: object, *, allow_zero: bool = False) -> Decimal:
     """Parse a user supplied amount. Accepts str, int or Decimal. Never accepts float."""
     if isinstance(value, bool) or isinstance(value, float):
-        raise InvalidAmount("amount must be a string such as \"500.00\", not a float")
+        raise InvalidAmount('amount must be a string such as "500.00", not a float')
     if isinstance(value, Decimal):
         amount = value
     else:

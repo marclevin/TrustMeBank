@@ -19,7 +19,6 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,13 +43,9 @@ class Customer(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     kind: Mapped[str] = mapped_column(String(16), nullable=False, default="personal")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
-    accounts: Mapped[list["Account"]] = relationship(
-        back_populates="customer", order_by="Account.created_at"
-    )
+    accounts: Mapped[list["Account"]] = relationship(back_populates="customer", order_by="Account.created_at")
 
     @property
     def can_login(self) -> bool:
@@ -71,9 +66,7 @@ class Account(Base):
     balance: Mapped[Decimal] = mapped_column(Money, nullable=False, default=Decimal("0.00"))
     allow_overdraft: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     customer: Mapped[Customer] = relationship(back_populates="accounts")
 
@@ -88,9 +81,7 @@ class Journal(Base):
     payment_id: Mapped[str | None] = mapped_column(
         String(32), ForeignKey("payments.id", ondelete="SET NULL"), unique=True
     )
-    booked_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    booked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="journal")
 
@@ -112,9 +103,7 @@ class Transaction(Base):
     reference: Mapped[str | None] = mapped_column(String(35))
     counterparty_name: Mapped[str] = mapped_column(String(255), nullable=False)
     counterparty_account_number: Mapped[str] = mapped_column(String(10), nullable=False)
-    booked_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    booked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     journal: Mapped[Journal] = relationship(back_populates="transactions")
     account: Mapped[Account] = relationship()
@@ -134,9 +123,7 @@ class Application(Base):
     webhook_secret: Mapped[str] = mapped_column(String(128), nullable=False)
     send_transaction_events: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
 
 class Consent(Base):
@@ -152,9 +139,7 @@ class Consent(Base):
     scopes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     customer: Mapped[Customer] = relationship()
@@ -177,9 +162,7 @@ class AuthorizationCode(Base):
     redirect_uri: Mapped[str] = mapped_column(String(1024), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     consent: Mapped[Consent] = relationship()
 
@@ -198,9 +181,7 @@ class Token(Base):
     code_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     consent: Mapped[Consent] = relationship()
 
@@ -230,18 +211,14 @@ class Payment(Base):
     redirect_uri: Mapped[str | None] = mapped_column(String(1024))
     journal_id: Mapped[str | None] = mapped_column(String(32))
     process_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
     authorised_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     application: Mapped[Application] = relationship()
     debtor_account: Mapped[Account] = relationship()
 
-    __table_args__ = (
-        UniqueConstraint("application_id", "idempotency_key", name="uq_payments_idempotency"),
-    )
+    __table_args__ = (UniqueConstraint("application_id", "idempotency_key", name="uq_payments_idempotency"),)
 
 
 class WebhookDelivery(Base):
@@ -257,17 +234,13 @@ class WebhookDelivery(Base):
     payload: Mapped[str] = mapped_column(Text, nullable=False)  # exact JSON body sent
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending", index=True)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    next_attempt_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
     last_status_code: Mapped[int | None] = mapped_column(Integer)
     last_error: Mapped[str | None] = mapped_column(Text)
     last_response_body: Mapped[str | None] = mapped_column(Text)
     last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
 
     application: Mapped[Application] = relationship()
 
@@ -283,6 +256,4 @@ class AuditLog(Base):
     target_id: Mapped[str | None] = mapped_column(String(64), index=True)
     details: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     ip: Mapped[str | None] = mapped_column(String(64))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)

@@ -1,13 +1,13 @@
 """Account information API."""
 
 import base64
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from mockbank.api.deps import get_auth, require_scope
+from mockbank.api.deps import require_scope
 from mockbank.db import get_db
 from mockbank.errors import APIError
 from mockbank.models import Account, Transaction, utcnow
@@ -39,16 +39,23 @@ def _own_account(db: Session, auth: AuthContext, account_id: str) -> Account:
 @router.get(
     "/accounts",
     response_model=AccountList,
+    response_model_exclude_none=True,
     responses=COMMON_ERRORS,
     summary="List the customer's accounts",
-    description="Scope: `accounts`. The `balance` field is included only when the consent also has `balances`.",
+    description=(
+        "Scope: `accounts`. The `balance` field is included only when the consent also has `balances`."
+    ),
 )
 def list_accounts(auth: AuthContext = Depends(require_scope("accounts")), db: Session = Depends(get_db)):
-    accounts = db.execute(
-        select(Account)
-        .where(Account.customer_id == auth.customer.id, Account.status == "active")
-        .order_by(Account.created_at)
-    ).scalars().all()
+    accounts = (
+        db.execute(
+            select(Account)
+            .where(Account.customer_id == auth.customer.id, Account.status == "active")
+            .order_by(Account.created_at)
+        )
+        .scalars()
+        .all()
+    )
     include_balance = auth.has_scope("balances")
     return {"data": [account_to_dict(a, include_balance=include_balance) for a in accounts]}
 
@@ -56,6 +63,7 @@ def list_accounts(auth: AuthContext = Depends(require_scope("accounts")), db: Se
 @router.get(
     "/accounts/{account_id}",
     response_model=AccountOut,
+    response_model_exclude_none=True,
     responses=COMMON_ERRORS,
     summary="Get one account",
     description="Scope: `accounts`.",
@@ -128,9 +136,9 @@ def list_transactions(
     if cursor:
         stmt = stmt.where(Transaction.seq < decode_cursor(cursor))
     if from_date:
-        stmt = stmt.where(Transaction.booked_at >= datetime.combine(from_date, time.min, tzinfo=timezone.utc))
+        stmt = stmt.where(Transaction.booked_at >= datetime.combine(from_date, time.min, tzinfo=UTC))
     if to_date:
-        end = datetime.combine(to_date, time.min, tzinfo=timezone.utc) + timedelta(days=1)
+        end = datetime.combine(to_date, time.min, tzinfo=UTC) + timedelta(days=1)
         stmt = stmt.where(Transaction.booked_at < end)
     rows = db.execute(stmt).scalars().all()
     has_more = len(rows) > limit

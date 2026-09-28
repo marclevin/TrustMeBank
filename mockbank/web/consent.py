@@ -24,9 +24,14 @@ def _validate_or_respond(request: Request, db: Session, params: dict):
             )
             return None, RedirectResponse(url, status_code=303)
         return None, render(
-            request, "error.html",
-            {"title": "Invalid authorization request", "message": exc.description, "status_code": 400,
-             "detail": f"error={exc.error}"},
+            request,
+            "error.html",
+            {
+                "title": "Invalid authorization request",
+                "message": exc.description,
+                "status_code": 400,
+                "detail": f"error={exc.error}",
+            },
             status_code=400,
         )
 
@@ -42,8 +47,9 @@ def authorize(
     customer: Customer | None = Depends(optional_customer),
     db: Session = Depends(get_db),
 ):
-    params = dict(client_id=client_id, redirect_uri=redirect_uri, response_type=response_type,
-                  scope=scope, state=state)
+    params = dict(
+        client_id=client_id, redirect_uri=redirect_uri, response_type=response_type, scope=scope, state=state
+    )
     req, response = _validate_or_respond(request, db, params)
     if response is not None:
         return response
@@ -67,8 +73,9 @@ def authorize_decision(
     db: Session = Depends(get_db),
 ):
     check_csrf(request, csrf)
-    params = dict(client_id=client_id, redirect_uri=redirect_uri, response_type=response_type,
-                  scope=scope, state=state)
+    params = dict(
+        client_id=client_id, redirect_uri=redirect_uri, response_type=response_type, scope=scope, state=state
+    )
     req, response = _validate_or_respond(request, db, params)
     if response is not None:
         return response

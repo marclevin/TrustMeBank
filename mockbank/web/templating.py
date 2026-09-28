@@ -42,7 +42,9 @@ def render(request: Request, name: str, context: dict | None = None, status_code
 
 def render_error(request: Request, status_code: int, title: str, message: str) -> HTMLResponse:
     return render(
-        request, "error.html", {"title": title, "message": message, "status_code": status_code},
+        request,
+        "error.html",
+        {"title": title, "message": message, "status_code": status_code},
         status_code=status_code,
     )
 

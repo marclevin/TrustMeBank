@@ -66,11 +66,17 @@ def enqueue_transaction_created(db: Session, transaction: Transaction) -> None:
 
     account = transaction.account
     now = utcnow()
-    consents = db.execute(
-        select(Consent).where(
-            Consent.customer_id == account.customer_id, Consent.status == "active", Consent.expires_at > now
+    consents = (
+        db.execute(
+            select(Consent).where(
+                Consent.customer_id == account.customer_id,
+                Consent.status == "active",
+                Consent.expires_at > now,
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     notified: set[str] = set()
     for consent in consents:
         if "transactions" not in consent.scopes or consent.application_id in notified:
@@ -141,7 +147,10 @@ def attempt_delivery(db: Session, delivery: WebhookDelivery, client: httpx.Clien
         },
     )
     log.info(
-        "webhook %s %s attempt %s -> %s", delivery.id, delivery.event_type, delivery.attempts,
+        "webhook %s %s attempt %s -> %s",
+        delivery.id,
+        delivery.event_type,
+        delivery.attempts,
         "delivered" if ok else (delivery.last_error or "failed"),
     )
     return ok

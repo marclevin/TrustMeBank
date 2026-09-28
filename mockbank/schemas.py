@@ -82,13 +82,19 @@ class Counterparty(BaseModel):
 
 
 class AccountOut(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "id": "acc_7f3k9d2m1q0z", "name": "Everyday Account", "account_number": "1000123456",
-            "account_type": "current", "currency": "ZAR", "balance": "15240.50",
-            "created_at": "2026-01-14T09:12:44Z",
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "acc_7f3k9d2m1q0z",
+                "name": "Everyday Account",
+                "account_number": "1000123456",
+                "account_type": "current",
+                "currency": "ZAR",
+                "balance": "15240.50",
+                "created_at": "2026-01-14T09:12:44Z",
+            }
         }
-    })
+    )
     id: str
     name: str
     account_number: str
@@ -140,24 +146,30 @@ class MeOut(BaseModel):
 
 
 class PaymentCreate(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "debtor_account_id": "acc_7f3k9d2m1q0z",
-            "creditor_account_number": "1000987654",
-            "amount": "500.00",
-            "currency": "ZAR",
-            "reference": "REM-92831",
-            "redirect_uri": "http://localhost:5000/payments/return",
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "debtor_account_id": "acc_7f3k9d2m1q0z",
+                "creditor_account_number": "1000987654",
+                "amount": "500.00",
+                "currency": "ZAR",
+                "reference": "REM-92831",
+                "redirect_uri": "http://localhost:5000/payments/return",
+            }
         }
-    })
+    )
     debtor_account_id: str = Field(description="One of the consenting customer's account ids")
-    creditor_account_number: str = Field(min_length=10, max_length=10, description="A MockBank account number")
+    creditor_account_number: str = Field(
+        min_length=10, max_length=10, description="A MockBank account number"
+    )
     amount: str = Field(description='String with two decimals, for example "500.00"')
     currency: str = Field(default="ZAR")
     reference: str = Field(min_length=1, max_length=35, description="Shown on both statements")
     redirect_uri: str | None = Field(
         default=None,
-        description="Where to send the customer after they approve or reject. Must be a registered redirect URI.",
+        description=(
+            "Where to send the customer after they approve or reject. Must be a registered redirect URI."
+        ),
     )
 
     @field_validator("amount", mode="before")
@@ -179,18 +191,27 @@ class PaymentCreate(BaseModel):
 
 
 class PaymentOut(BaseModel):
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "payment_id": "pay_3k2j1h0g9f8d", "status": "AWAITING_AUTHORISATION",
-            "debtor_account_id": "acc_7f3k9d2m1q0z", "creditor_account_number": "1000987654",
-            "creditor_name": "RemitX (Pty) Ltd", "amount": "500.00", "currency": "ZAR",
-            "reference": "REM-92831",
-            "authorisation_url": "http://localhost:8000/payments/pay_3k2j1h0g9f8d/authorise",
-            "redirect_uri": "http://localhost:5000/payments/return", "failure_reason": None,
-            "journal_id": None, "created_at": "2026-09-28T10:00:00Z", "authorised_at": None,
-            "completed_at": None,
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "payment_id": "pay_3k2j1h0g9f8d",
+                "status": "AWAITING_AUTHORISATION",
+                "debtor_account_id": "acc_7f3k9d2m1q0z",
+                "creditor_account_number": "1000987654",
+                "creditor_name": "RemitX (Pty) Ltd",
+                "amount": "500.00",
+                "currency": "ZAR",
+                "reference": "REM-92831",
+                "authorisation_url": "http://localhost:8000/payments/pay_3k2j1h0g9f8d/authorise",
+                "redirect_uri": "http://localhost:5000/payments/return",
+                "failure_reason": None,
+                "journal_id": None,
+                "created_at": "2026-09-28T10:00:00Z",
+                "authorised_at": None,
+                "completed_at": None,
+            }
         }
-    })
+    )
     payment_id: str
     status: str = Field(description="AWAITING_AUTHORISATION, PROCESSING, COMPLETED, REJECTED or FAILED")
     debtor_account_id: str

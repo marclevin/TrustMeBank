@@ -1,4 +1,7 @@
-"""The contract: register app -> authorize -> exchange -> accounts -> payment -> approve -> ledger -> webhook."""
+"""The contract.
+
+register app -> authorize -> exchange -> accounts -> payment -> approve -> ledger -> webhook
+"""
 
 import json
 from decimal import Decimal
@@ -37,9 +40,14 @@ def test_full_lifecycle(client, api, db, registered_app):
     created = api.post(
         "/api/v1/payments",
         headers={**bearer(token), "Idempotency-Key": "lifecycle-1"},
-        json={"debtor_account_id": everyday["id"], "creditor_account_number": REMITX_ACCOUNT_NUMBER,
-              "amount": "500.00", "currency": "ZAR", "reference": "REM-92831",
-              "redirect_uri": "http://localhost:5000/payments/return"},
+        json={
+            "debtor_account_id": everyday["id"],
+            "creditor_account_number": REMITX_ACCOUNT_NUMBER,
+            "amount": "500.00",
+            "currency": "ZAR",
+            "reference": "REM-92831",
+            "redirect_uri": "http://localhost:5000/payments/return",
+        },
     )
     assert created.status_code == 201, created.text
     payment = created.json()
@@ -97,7 +105,9 @@ def test_full_lifecycle(client, api, db, registered_app):
     assert hit.url == "http://tpp.test/webhooks/mockbank"
     assert hit.headers["X-MockBank-Event"] == "payment.completed"
     assert hit.headers["X-MockBank-Delivery-Id"] == delivery.id
-    assert verify_webhook_signature(application.webhook_secret, hit.content, hit.headers["X-MockBank-Signature"])
+    assert verify_webhook_signature(
+        application.webhook_secret, hit.content, hit.headers["X-MockBank-Signature"]
+    )
     assert not verify_webhook_signature("wrong-secret", hit.content, hit.headers["X-MockBank-Signature"])
     body = json.loads(hit.content)
     assert body["id"] == delivery.id and body["event"] == "payment.completed"
@@ -111,9 +121,14 @@ def test_full_lifecycle(client, api, db, registered_app):
     replay = api.post(
         "/api/v1/payments",
         headers={**bearer(token), "Idempotency-Key": "lifecycle-1"},
-        json={"debtor_account_id": everyday["id"], "creditor_account_number": REMITX_ACCOUNT_NUMBER,
-              "amount": "500.00", "currency": "ZAR", "reference": "REM-92831",
-              "redirect_uri": "http://localhost:5000/payments/return"},
+        json={
+            "debtor_account_id": everyday["id"],
+            "creditor_account_number": REMITX_ACCOUNT_NUMBER,
+            "amount": "500.00",
+            "currency": "ZAR",
+            "reference": "REM-92831",
+            "redirect_uri": "http://localhost:5000/payments/return",
+        },
     )
     assert replay.status_code == 200 and replay.headers["Idempotent-Replayed"] == "true"
     assert replay.json()["payment_id"] == row.id

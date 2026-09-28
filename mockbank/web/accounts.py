@@ -30,40 +30,56 @@ def _own_account(db: Session, customer: Customer, account_id: str) -> Account:
 
 @router.get("/accounts")
 def accounts(request: Request, customer: Customer = Depends(current_customer), db: Session = Depends(get_db)):
-    rows = db.execute(
-        select(Account).where(Account.customer_id == customer.id).order_by(Account.created_at)
-    ).scalars().all()
-    pending = db.execute(
-        select(Payment)
-        .join(Account, Account.id == Payment.debtor_account_id)
-        .where(Account.customer_id == customer.id, Payment.status == "AWAITING_AUTHORISATION")
-        .order_by(Payment.created_at.desc())
-    ).scalars().all()
+    rows = (
+        db.execute(select(Account).where(Account.customer_id == customer.id).order_by(Account.created_at))
+        .scalars()
+        .all()
+    )
+    pending = (
+        db.execute(
+            select(Payment)
+            .join(Account, Account.id == Payment.debtor_account_id)
+            .where(Account.customer_id == customer.id, Payment.status == "AWAITING_AUTHORISATION")
+            .order_by(Payment.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
     total = sum((a.balance for a in rows), Decimal("0.00"))
     return render(request, "accounts.html", {"accounts": rows, "total": total, "pending_payments": pending})
 
 
 @router.get("/accounts/{account_id}")
 def account_detail(
-    request: Request, account_id: str, customer: Customer = Depends(current_customer),
+    request: Request,
+    account_id: str,
+    customer: Customer = Depends(current_customer),
     db: Session = Depends(get_db),
 ):
     account = _own_account(db, customer, account_id)
-    txns = db.execute(
-        select(Transaction)
-        .options(joinedload(Transaction.journal))
-        .where(Transaction.account_id == account.id)
-        .order_by(Transaction.seq.desc())
-        .limit(200)
-    ).scalars().all()
+    txns = (
+        db.execute(
+            select(Transaction)
+            .options(joinedload(Transaction.journal))
+            .where(Transaction.account_id == account.id)
+            .order_by(Transaction.seq.desc())
+            .limit(200)
+        )
+        .scalars()
+        .all()
+    )
     return render(request, "account_detail.html", {"account": account, "transactions": txns})
 
 
 @router.get("/transfer")
-def transfer_form(request: Request, customer: Customer = Depends(current_customer), db: Session = Depends(get_db)):
-    rows = db.execute(
-        select(Account).where(Account.customer_id == customer.id, Account.status == "active")
-    ).scalars().all()
+def transfer_form(
+    request: Request, customer: Customer = Depends(current_customer), db: Session = Depends(get_db)
+):
+    rows = (
+        db.execute(select(Account).where(Account.customer_id == customer.id, Account.status == "active"))
+        .scalars()
+        .all()
+    )
     return render(request, "transfer.html", {"accounts": rows, "form": {}, "error": None})
 
 
@@ -79,14 +95,22 @@ def transfer(
     db: Session = Depends(get_db),
 ):
     check_csrf(request, csrf)
-    rows = db.execute(
-        select(Account).where(Account.customer_id == customer.id, Account.status == "active")
-    ).scalars().all()
-    form = {"from_account_id": from_account_id, "to_account_number": to_account_number,
-            "amount": amount, "reference": reference}
+    rows = (
+        db.execute(select(Account).where(Account.customer_id == customer.id, Account.status == "active"))
+        .scalars()
+        .all()
+    )
+    form = {
+        "from_account_id": from_account_id,
+        "to_account_number": to_account_number,
+        "amount": amount,
+        "reference": reference,
+    }
 
     def fail(message: str):
-        return render(request, "transfer.html", {"accounts": rows, "form": form, "error": message}, status_code=422)
+        return render(
+            request, "transfer.html", {"accounts": rows, "form": form, "error": message}, status_code=422
+        )
 
     source = _own_account(db, customer, from_account_id)
     target = db.execute(
@@ -105,39 +129,58 @@ def transfer(
             debit_account_id=source.id,
             credit_account_id=target.id,
             amount=value,
-            description=f"Transfer to {target.customer.full_name}" if target.customer_id != customer.id
+            description=f"Transfer to {target.customer.full_name}"
+            if target.customer_id != customer.id
             else f"Transfer to {target.name}",
             reference=reference or None,
         )
         # The credit side reads better as "Transfer from <name>".
         result.credit.description = (
-            f"Transfer from {customer.full_name}" if target.customer_id != customer.id
+            f"Transfer from {customer.full_name}"
+            if target.customer_id != customer.id
             else f"Transfer from {source.name}"
         )
         webhooks.enqueue_transaction_created(db, result.debit)
         webhooks.enqueue_transaction_created(db, result.credit)
-        audit(db, actor_type="customer", actor_id=customer.id, action="transfer.posted",
-              target_type="journal", target_id=result.journal.id,
-              details={"amount": str(value), "to": target.account_number}, ip=client_ip(request))
+        audit(
+            db,
+            actor_type="customer",
+            actor_id=customer.id,
+            action="transfer.posted",
+            target_type="journal",
+            target_id=result.journal.id,
+            details={"amount": str(value), "to": target.account_number},
+            ip=client_ip(request),
+        )
         db.commit()
     except LedgerError as exc:
         db.rollback()
-        return fail({"insufficient_funds": "Insufficient funds.",
-                     "account_closed": "That account is closed."}.get(exc.code, str(exc)))
+        return fail(
+            {"insufficient_funds": "Insufficient funds.", "account_closed": "That account is closed."}.get(
+                exc.code, str(exc)
+            )
+        )
     flash(request, f"Transfer of R{value:,.2f} to {target.account_number} completed.", "success")
     return RedirectResponse(f"/accounts/{source.id}", status_code=303)
 
 
 @router.get("/connected-apps")
-def connected_apps(request: Request, customer: Customer = Depends(current_customer), db: Session = Depends(get_db)):
+def connected_apps(
+    request: Request, customer: Customer = Depends(current_customer), db: Session = Depends(get_db)
+):
     consents = oauth_service.active_consents_for_customer(db, customer.id)
-    return render(request, "connected_apps.html", {"consents": consents, "scope_labels": oauth_service.SCOPES})
+    return render(
+        request, "connected_apps.html", {"consents": consents, "scope_labels": oauth_service.SCOPES}
+    )
 
 
 @router.post("/connected-apps/{consent_id}/revoke")
 def revoke(
-    request: Request, consent_id: str, csrf: str = Form(default=""),
-    customer: Customer = Depends(current_customer), db: Session = Depends(get_db),
+    request: Request,
+    consent_id: str,
+    csrf: str = Form(default=""),
+    customer: Customer = Depends(current_customer),
+    db: Session = Depends(get_db),
 ):
     check_csrf(request, csrf)
     consent = db.get(Consent, consent_id)

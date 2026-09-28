@@ -113,9 +113,7 @@ def revoke_consent(db: Session, consent: Consent, *, actor_type: str, actor_id: 
     consent.status = "revoked"
     consent.revoked_at = now
     db.execute(
-        update(Token)
-        .where(Token.consent_id == consent.id, Token.revoked_at.is_(None))
-        .values(revoked_at=now)
+        update(Token).where(Token.consent_id == consent.id, Token.revoked_at.is_(None)).values(revoked_at=now)
     )
     db.execute(
         update(AuthorizationCode)
@@ -142,13 +140,17 @@ def grant_consent(
     """
     settings = get_settings()
     now = utcnow()
-    existing = db.execute(
-        select(Consent).where(
-            Consent.customer_id == customer.id,
-            Consent.application_id == req.application.id,
-            Consent.status == "active",
+    existing = (
+        db.execute(
+            select(Consent).where(
+                Consent.customer_id == customer.id,
+                Consent.application_id == req.application.id,
+                Consent.status == "active",
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for old in existing:
         revoke_consent(db, old, actor_type="customer", actor_id=customer.id)
 
@@ -229,9 +231,7 @@ def _issue_tokens(db: Session, consent: Consent, app: Application, code_hash: st
     }
 
 
-def exchange_code(
-    db: Session, *, app: Application, code: str | None, redirect_uri: str | None
-) -> dict:
+def exchange_code(db: Session, *, app: Application, code: str | None, redirect_uri: str | None) -> dict:
     """grant_type=authorization_code. Does not commit."""
     if not code:
         raise OAuthError("invalid_request", "code is required.")
@@ -250,10 +250,18 @@ def exchange_code(
             .values(revoked_at=now)
         )
         audit(
-            db, actor_type="application", actor_id=app.id, action="oauth.code_replayed",
-            target_type="consent", target_id=row.consent_id,
+            db,
+            actor_type="application",
+            actor_id=app.id,
+            action="oauth.code_replayed",
+            target_type="consent",
+            target_id=row.consent_id,
         )
-        raise OAuthError("invalid_grant", "Authorization code has already been used. Tokens issued from it have been revoked.")
+        db.commit()  # the revocation must persist even though this request fails
+        raise OAuthError(
+            "invalid_grant",
+            "Authorization code has already been used. Tokens issued from it have been revoked.",
+        )
     if row.expires_at <= now:
         raise OAuthError("invalid_grant", "Authorization code has expired. Codes last 5 minutes.")
     if not redirect_uri or redirect_uri != row.redirect_uri:
@@ -264,8 +272,13 @@ def exchange_code(
     row.used_at = now
     tokens = _issue_tokens(db, consent, app, code_hash)
     audit(
-        db, actor_type="application", actor_id=app.id, action="oauth.token_issued",
-        target_type="consent", target_id=consent.id, details={"grant": "authorization_code"},
+        db,
+        actor_type="application",
+        actor_id=app.id,
+        action="oauth.token_issued",
+        target_type="consent",
+        target_id=consent.id,
+        details={"grant": "authorization_code"},
     )
     return tokens
 
@@ -292,8 +305,13 @@ def refresh_tokens(db: Session, *, app: Application, refresh_token: str | None) 
     row.revoked_at = now
     tokens = _issue_tokens(db, consent, app, row.code_hash)
     audit(
-        db, actor_type="application", actor_id=app.id, action="oauth.token_issued",
-        target_type="consent", target_id=consent.id, details={"grant": "refresh_token"},
+        db,
+        actor_type="application",
+        actor_id=app.id,
+        action="oauth.token_issued",
+        target_type="consent",
+        target_id=consent.id,
+        details={"grant": "refresh_token"},
     )
     return tokens
 
@@ -341,9 +359,13 @@ def resolve_access_token(db: Session, token: str) -> AuthContext:
 
 def active_consents_for_customer(db: Session, customer_id: str) -> list[Consent]:
     now = utcnow()
-    rows = db.execute(
-        select(Consent)
-        .where(Consent.customer_id == customer_id, Consent.status == "active")
-        .order_by(Consent.created_at.desc())
-    ).scalars().all()
+    rows = (
+        db.execute(
+            select(Consent)
+            .where(Consent.customer_id == customer_id, Consent.status == "active")
+            .order_by(Consent.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
     return [c for c in rows if c.expires_at > now]

@@ -2,12 +2,12 @@
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
+from mockbank import models  # noqa: F401  (registers the tables on Base.metadata)
 from mockbank.config import get_settings
 from mockbank.db import Base
-from mockbank import models  # noqa: F401  (registers the tables on Base.metadata)
 
 config = context.config
 if config.config_file_name is not None:

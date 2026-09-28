@@ -40,17 +40,31 @@ def create_customer(
     )
     db.add(customer)
     db.flush()
-    audit(db, actor_type="admin", actor_id="admin", action="admin.customer_created",
-          target_type="customer", target_id=customer.id, details={"email": email})
+    audit(
+        db,
+        actor_type="admin",
+        actor_id="admin",
+        action="admin.customer_created",
+        target_type="customer",
+        target_id=customer.id,
+        details={"email": email},
+    )
     return customer
 
 
 def create_account(
-    db: Session, *, customer: Customer, name: str, account_type: str = "current",
-    opening_balance: Decimal | None = None, history: str = "none",
+    db: Session,
+    *,
+    customer: Customer,
+    name: str,
+    account_type: str = "current",
+    opening_balance: Decimal | None = None,
+    history: str = "none",
 ) -> Account:
     account = Account(
-        customer_id=customer.id, name=name.strip(), account_number=unique_account_number(db),
+        customer_id=customer.id,
+        name=name.strip(),
+        account_number=unique_account_number(db),
         account_type=account_type,
     )
     db.add(account)
@@ -60,9 +74,15 @@ def create_account(
             seed_service.seed_history(db, account, history, opening_balance)
         else:
             seed_service.top_up(db, account, opening_balance, "Opening balance")
-    audit(db, actor_type="admin", actor_id="admin", action="admin.account_created",
-          target_type="account", target_id=account.id,
-          details={"customer_id": customer.id, "opening_balance": str(opening_balance or 0)})
+    audit(
+        db,
+        actor_type="admin",
+        actor_id="admin",
+        action="admin.account_created",
+        target_type="account",
+        target_id=account.id,
+        details={"customer_id": customer.id, "opening_balance": str(opening_balance or 0)},
+    )
     return account
 
 
@@ -99,18 +119,32 @@ def register_application(
     )
     db.add(app)
     db.flush()
-    audit(db, actor_type="admin", actor_id="admin", action="admin.application_registered",
-          target_type="application", target_id=app.id, details={"name": app.name})
+    audit(
+        db,
+        actor_type="admin",
+        actor_id="admin",
+        action="admin.application_registered",
+        target_type="application",
+        target_id=app.id,
+        details={"name": app.name},
+    )
     result = RegisteredApplication(application=app, client_secret=secret)
     if settlement_email:
         password = settlement_password or new_secret("", 9)
         customer = create_customer(
-            db, email=settlement_email, full_name=f"{name.strip()} (Pty) Ltd", password=password,
+            db,
+            email=settlement_email,
+            full_name=f"{name.strip()} (Pty) Ltd",
+            password=password,
             kind="business",
         )
         account = create_account(
-            db, customer=customer, name=f"{name.strip()} Settlement Account", account_type="business",
-            opening_balance=settlement_opening_balance or Decimal("0.00"), history="none",
+            db,
+            customer=customer,
+            name=f"{name.strip()} Settlement Account",
+            account_type="business",
+            opening_balance=settlement_opening_balance or Decimal("0.00"),
+            history="none",
         )
         result.settlement_customer = customer
         result.settlement_account = account
@@ -121,13 +155,25 @@ def register_application(
 def regenerate_client_secret(db: Session, app: Application) -> str:
     secret = new_secret("mbsk_", 24)
     app.client_secret_hash = sha256(secret)
-    audit(db, actor_type="admin", actor_id="admin", action="admin.client_secret_regenerated",
-          target_type="application", target_id=app.id)
+    audit(
+        db,
+        actor_type="admin",
+        actor_id="admin",
+        action="admin.client_secret_regenerated",
+        target_type="application",
+        target_id=app.id,
+    )
     return secret
 
 
 def rotate_webhook_secret(db: Session, app: Application) -> str:
     app.webhook_secret = new_secret("whsec_", 24)
-    audit(db, actor_type="admin", actor_id="admin", action="admin.webhook_secret_rotated",
-          target_type="application", target_id=app.id)
+    audit(
+        db,
+        actor_type="admin",
+        actor_id="admin",
+        action="admin.webhook_secret_rotated",
+        target_type="application",
+        target_id=app.id,
+    )
     return app.webhook_secret

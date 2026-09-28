@@ -65,7 +65,9 @@ def create_payment(
     description="Scope: `payments`. Newest first. Filter with `status`.",
 )
 def list_payments(
-    status: str | None = Query(default=None, description="AWAITING_AUTHORISATION, PROCESSING, COMPLETED, REJECTED or FAILED"),
+    status: str | None = Query(
+        default=None, description="AWAITING_AUTHORISATION, PROCESSING, COMPLETED, REJECTED or FAILED"
+    ),
     limit: int = Query(default=50, ge=1, le=200),
     cursor: str | None = Query(default=None),
     auth: AuthContext = Depends(require_scope("payments")),

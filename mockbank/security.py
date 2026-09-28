@@ -39,9 +39,7 @@ def sign_webhook(secret: str, body: bytes, timestamp: int | None = None) -> str:
     return f"t={t},v1={digest}"
 
 
-def verify_webhook_signature(
-    secret: str, body: bytes, header: str, tolerance_seconds: int = 300
-) -> bool:
+def verify_webhook_signature(secret: str, body: bytes, header: str, tolerance_seconds: int = 300) -> bool:
     """Reference implementation of what a TPP should do. Used by the tests and the docs."""
     try:
         parts = dict(item.split("=", 1) for item in header.split(","))

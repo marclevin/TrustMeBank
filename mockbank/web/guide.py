@@ -1,5 +1,6 @@
 """Render the Markdown guides in docs/ at /guide/<name> so the deployed bank carries its docs."""
 
+import os
 import re
 from pathlib import Path
 
@@ -11,7 +12,19 @@ from mockbank.web.templating import render
 
 router = APIRouter(include_in_schema=False)
 
-DOCS_DIR = Path(__file__).resolve().parent.parent.parent / "docs"
+
+def _docs_dir() -> Path:
+    """The docs folder sits next to the package in the repository and in the Docker image."""
+    configured = os.environ.get("MOCKBANK_DOCS_DIR")
+    candidates = [Path(configured)] if configured else []
+    candidates += [Path(__file__).resolve().parent.parent.parent / "docs", Path("/app/docs"), Path("docs")]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
+DOCS_DIR = _docs_dir()
 GUIDES = [
     ("getting-started", "Getting started"),
     ("oauth", "OAuth and consent"),

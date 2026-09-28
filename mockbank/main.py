@@ -32,7 +32,10 @@ application (secret `mbsk_remitx_demo_secret`), logging in as `alice@example.com
 TAGS = [
     {"name": "OAuth", "description": "Token exchange. The consent screen itself is a browser page."},
     {"name": "Accounts", "description": "Account information. Scopes: accounts, balances, transactions."},
-    {"name": "Payments", "description": "Payment initiation. Scope: payments. Money moves only after the customer approves on MockBank."},
+    {
+        "name": "Payments",
+        "description": "Payment initiation. Scope: payments. Money moves only after the customer approves.",
+    },
     {"name": "System", "description": "Health check."},
 ]
 
@@ -40,7 +43,9 @@ TAGS = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    logging.basicConfig(level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     logging.getLogger("httpx").setLevel(logging.WARNING)
     from mockbank import worker
 

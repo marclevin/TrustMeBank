@@ -73,7 +73,8 @@ def create_payment(
     ).scalar_one_or_none()
     if creditor is None or creditor.status != "active" or creditor.customer.kind == "system":
         raise APIError(
-            422, "invalid_creditor",
+            422,
+            "invalid_creditor",
             "creditor_account_number is not an active MockBank account. Payments can only be made to "
             "accounts that exist at MockBank.",
         )
@@ -82,7 +83,8 @@ def create_payment(
 
     if body.redirect_uri is not None and body.redirect_uri not in application.redirect_uris:
         raise APIError(
-            422, "invalid_redirect_uri",
+            422,
+            "invalid_redirect_uri",
             "redirect_uri must exactly match one of the application's registered redirect URIs.",
             {"registered": application.redirect_uris},
         )
@@ -103,10 +105,18 @@ def create_payment(
     )
     db.add(payment)
     audit(
-        db, actor_type="application", actor_id=application.id, action="payment.created",
-        target_type="payment", target_id=payment.id,
-        details={"amount": str(amount), "debtor_account_id": debtor.id,
-                 "creditor_account_number": creditor.account_number, "customer_id": customer.id},
+        db,
+        actor_type="application",
+        actor_id=application.id,
+        action="payment.created",
+        target_type="payment",
+        target_id=payment.id,
+        details={
+            "amount": str(amount),
+            "debtor_account_id": debtor.id,
+            "creditor_account_number": creditor.account_number,
+            "customer_id": customer.id,
+        },
         ip=ip,
     )
     try:
@@ -120,8 +130,11 @@ def create_payment(
             )
         ).scalar_one()
         if existing.request_hash != request_hash:
-            raise APIError(409, "idempotency_key_reused",
-                           "This Idempotency-Key was already used with a different request body.") from None
+            raise APIError(
+                409,
+                "idempotency_key_reused",
+                "This Idempotency-Key was already used with a different request body.",
+            ) from None
         return existing, True
     return payment, False
 
@@ -138,9 +151,7 @@ def approve_payment(db: Session, payment: Payment, customer: Customer, ip: str |
     With no processing delay the payment is settled in the same transaction.
     """
     settings = get_settings()
-    payment = db.execute(
-        select(Payment).where(Payment.id == payment.id).with_for_update()
-    ).scalar_one()
+    payment = db.execute(select(Payment).where(Payment.id == payment.id).with_for_update()).scalar_one()
     if payment.status != AWAITING:
         db.rollback()
         return payment
@@ -149,8 +160,13 @@ def approve_payment(db: Session, payment: Payment, customer: Customer, ip: str |
     payment.authorised_at = now
     payment.process_after = now + timedelta(seconds=settings.payment_processing_delay_seconds)
     audit(
-        db, actor_type="customer", actor_id=customer.id, action="payment.approved",
-        target_type="payment", target_id=payment.id, ip=ip,
+        db,
+        actor_type="customer",
+        actor_id=customer.id,
+        action="payment.approved",
+        target_type="payment",
+        target_id=payment.id,
+        ip=ip,
     )
     if settings.payment_processing_delay_seconds <= 0:
         _settle_locked(db, payment)
@@ -159,21 +175,27 @@ def approve_payment(db: Session, payment: Payment, customer: Customer, ip: str |
 
 
 def reject_payment(db: Session, payment: Payment, customer: Customer, ip: str | None = None) -> Payment:
-    payment = db.execute(
-        select(Payment).where(Payment.id == payment.id).with_for_update()
-    ).scalar_one()
+    payment = db.execute(select(Payment).where(Payment.id == payment.id).with_for_update()).scalar_one()
     if payment.status != AWAITING:
         db.rollback()
         return payment
     payment.status = REJECTED
     payment.completed_at = utcnow()
     audit(
-        db, actor_type="customer", actor_id=customer.id, action="payment.rejected",
-        target_type="payment", target_id=payment.id, ip=ip,
+        db,
+        actor_type="customer",
+        actor_id=customer.id,
+        action="payment.rejected",
+        target_type="payment",
+        target_id=payment.id,
+        ip=ip,
     )
     webhooks.enqueue(
-        db, application=payment.application, event_type="payment.rejected",
-        data=_webhook_data(payment), payment_id=payment.id,
+        db,
+        application=payment.application,
+        event_type="payment.rejected",
+        data=_webhook_data(payment),
+        payment_id=payment.id,
     )
     db.commit()
     return payment
@@ -203,25 +225,40 @@ def _settle_locked(db: Session, payment: Payment) -> None:
         payment.failure_reason = exc.code
         payment.completed_at = now
         audit(
-            db, actor_type="system", actor_id=None, action="payment.failed",
-            target_type="payment", target_id=payment.id, details={"reason": exc.code},
+            db,
+            actor_type="system",
+            actor_id=None,
+            action="payment.failed",
+            target_type="payment",
+            target_id=payment.id,
+            details={"reason": exc.code},
         )
         webhooks.enqueue(
-            db, application=payment.application, event_type="payment.failed",
-            data=_webhook_data(payment), payment_id=payment.id,
+            db,
+            application=payment.application,
+            event_type="payment.failed",
+            data=_webhook_data(payment),
+            payment_id=payment.id,
         )
         return
     payment.status = COMPLETED
     payment.journal_id = result.journal.id
     payment.completed_at = now
     audit(
-        db, actor_type="system", actor_id=None, action="payment.completed",
-        target_type="payment", target_id=payment.id,
+        db,
+        actor_type="system",
+        actor_id=None,
+        action="payment.completed",
+        target_type="payment",
+        target_id=payment.id,
         details={"journal_id": result.journal.id, "amount": str(payment.amount)},
     )
     webhooks.enqueue(
-        db, application=payment.application, event_type="payment.completed",
-        data=_webhook_data(payment), payment_id=payment.id,
+        db,
+        application=payment.application,
+        event_type="payment.completed",
+        data=_webhook_data(payment),
+        payment_id=payment.id,
     )
     webhooks.enqueue_transaction_created(db, result.debit)
     webhooks.enqueue_transaction_created(db, result.credit)
@@ -245,12 +282,16 @@ def settle_payment(db: Session, payment_id: str) -> Payment | None:
 
 def settle_due(db: Session, limit: int = 50) -> int:
     """Settle every PROCESSING payment whose delay has elapsed. Returns count settled."""
-    ids = db.execute(
-        select(Payment.id)
-        .where(Payment.status == PROCESSING, Payment.process_after <= utcnow())
-        .order_by(Payment.process_after)
-        .limit(limit)
-    ).scalars().all()
+    ids = (
+        db.execute(
+            select(Payment.id)
+            .where(Payment.status == PROCESSING, Payment.process_after <= utcnow())
+            .order_by(Payment.process_after)
+            .limit(limit)
+        )
+        .scalars()
+        .all()
+    )
     db.rollback()
     count = 0
     for pid in ids:

@@ -26,7 +26,9 @@ def _load(db: Session, customer: Customer, payment_id: str) -> Payment:
 
 @router.get("/payments/{payment_id}/authorise")
 def authorise_page(
-    request: Request, payment_id: str, customer: Customer = Depends(current_customer),
+    request: Request,
+    payment_id: str,
+    customer: Customer = Depends(current_customer),
     db: Session = Depends(get_db),
 ):
     payment = _load(db, customer, payment_id)
@@ -35,8 +37,12 @@ def authorise_page(
 
 @router.post("/payments/{payment_id}/authorise")
 def authorise_decision(
-    request: Request, payment_id: str, decision: str = Form(...), csrf: str = Form(default=""),
-    customer: Customer = Depends(current_customer), db: Session = Depends(get_db),
+    request: Request,
+    payment_id: str,
+    decision: str = Form(...),
+    csrf: str = Form(default=""),
+    customer: Customer = Depends(current_customer),
+    db: Session = Depends(get_db),
 ):
     check_csrf(request, csrf)
     payment = _load(db, customer, payment_id)

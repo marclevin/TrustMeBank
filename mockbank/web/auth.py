@@ -23,7 +23,9 @@ def home(request: Request, customer: Customer | None = Depends(optional_customer
 
 
 @router.get("/login")
-def login_form(request: Request, next: str | None = None, customer: Customer | None = Depends(optional_customer)):
+def login_form(
+    request: Request, next: str | None = None, customer: Customer | None = Depends(optional_customer)
+):
     if customer:
         return RedirectResponse(safe_next(next), status_code=303)
     ensure_csrf(request)
@@ -44,11 +46,18 @@ def login(
         select(Customer).where(Customer.email == email.strip().lower())
     ).scalar_one_or_none()
     if customer is None or not customer.can_login or not verify_password(password, customer.password_hash):
-        audit(db, actor_type="customer", actor_id=None, action="login.failed",
-              details={"email": email.strip().lower()}, ip=client_ip(request))
+        audit(
+            db,
+            actor_type="customer",
+            actor_id=None,
+            action="login.failed",
+            details={"email": email.strip().lower()},
+            ip=client_ip(request),
+        )
         db.commit()
         return render(
-            request, "login.html",
+            request,
+            "login.html",
             {"next": safe_next(next), "error": "Incorrect email or password.", "email": email},
             status_code=401,
         )
