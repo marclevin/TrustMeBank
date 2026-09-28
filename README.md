@@ -59,7 +59,8 @@ Seeded credentials for development:
 
 ## For the instructor
 
-[docs/admin-guide.md](docs/admin-guide.md) covers deployment behind HTTPS, onboarding a team
+[deploy/gcp/README.md](deploy/gcp/README.md) deploys a class instance to a single Google Cloud VM
+with one script. [docs/admin-guide.md](docs/admin-guide.md) covers deployment behind HTTPS, onboarding a team
 in one form (application plus settlement customer and account), day-to-day tasks, and the two
 reset modes. Command line equivalents:
 

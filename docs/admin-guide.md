@@ -27,6 +27,9 @@ trustmebank.example.ac.za {
 and set `PUBLIC_BASE_URL=https://trustmebank.example.ac.za` and `SESSION_COOKIE_SECURE=true`.
 Restart with `docker compose up -d`.
 
+On Google Cloud, `deploy/gcp/deploy.sh` in the repository does all of the above on one
+Compute Engine VM, including Caddy and HTTPS; see `deploy/gcp/README.md`.
+
 Upgrading: `git pull && docker compose build && docker compose up -d`. Migrations run
 automatically.
 
