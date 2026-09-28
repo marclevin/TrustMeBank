@@ -6,7 +6,7 @@ echo "Waiting for the database..."
 python - <<'PY'
 import os, sys, time
 from sqlalchemy import create_engine, text
-url = os.environ.get("DATABASE_URL", "postgresql+psycopg://mockbank:mockbank@db:5432/mockbank")
+url = os.environ.get("DATABASE_URL", "postgresql+psycopg://trustmebank:trustmebank@db:5432/trustmebank")
 engine = create_engine(url, pool_pre_ping=True)
 for attempt in range(60):
     try:
@@ -24,7 +24,7 @@ alembic upgrade head
 
 if [ "${SEED_ON_STARTUP:-true}" = "true" ]; then
   echo "Seeding (idempotent)..."
-  mockbank seed
+  tmb seed
 fi
 
 exec "$@"

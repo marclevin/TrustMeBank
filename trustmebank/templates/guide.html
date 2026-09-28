@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - TrustMeBank developer guide{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:220px 1fr;gap:28px">
+  <aside class="guide-nav card tight">
+    <strong>Developer guide</strong>
+    {% for key, label in guides %}<a href="/guide/{{ key }}">{{ label }}</a>{% endfor %}
+    <a href="/docs">Swagger UI</a>
+    <a href="/openapi.json">openapi.json</a>
+  </aside>
+  <article class="card guide">
+    {% if body %}{{ body|safe }}{% else %}
+    <h1>TrustMeBank developer guide</h1>
+    <p>Start with <a href="/guide/getting-started">Getting started</a>. It takes you from nothing to a working OAuth connection, a payment and a verified webhook.</p>
+    {% endif %}
+  </article>
+</div>
+{% endblock %}

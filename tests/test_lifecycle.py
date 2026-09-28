@@ -8,9 +8,6 @@ from decimal import Decimal
 
 import httpx
 
-from mockbank import worker
-from mockbank.models import Journal, Payment, Transaction, WebhookDelivery
-from mockbank.security import verify_webhook_signature
 from tests.conftest import (
     REMITX_ACCOUNT_NUMBER,
     account_by_number,
@@ -18,6 +15,9 @@ from tests.conftest import (
     csrf_from,
     get_token,
 )
+from trustmebank import worker
+from trustmebank.models import Journal, Payment, Transaction, WebhookDelivery
+from trustmebank.security import verify_webhook_signature
 
 
 def test_full_lifecycle(client, api, db, registered_app):
@@ -27,7 +27,7 @@ def test_full_lifecycle(client, api, db, registered_app):
     token = get_token(client, api, application, secret)
     assert token["token_type"] == "Bearer"
     assert token["scope"] == "accounts balances transactions payments"
-    assert token["access_token"].startswith("mbat_")
+    assert token["access_token"].startswith("tmbat_")
 
     # 4. Retrieve accounts.
     accounts = api.get("/api/v1/accounts", headers=bearer(token)).json()["data"]
@@ -102,13 +102,13 @@ def test_full_lifecycle(client, api, db, registered_app):
         stats = worker.run_once(http)
     assert stats["webhooks_attempted"] >= 1
     hit = next(r for r in received if json.loads(r.content)["data"]["payment_id"] == row.id)
-    assert hit.url == "http://tpp.test/webhooks/mockbank"
-    assert hit.headers["X-MockBank-Event"] == "payment.completed"
-    assert hit.headers["X-MockBank-Delivery-Id"] == delivery.id
+    assert hit.url == "http://tpp.test/webhooks/trustmebank"
+    assert hit.headers["X-TrustMeBank-Event"] == "payment.completed"
+    assert hit.headers["X-TrustMeBank-Delivery-Id"] == delivery.id
     assert verify_webhook_signature(
-        application.webhook_secret, hit.content, hit.headers["X-MockBank-Signature"]
+        application.webhook_secret, hit.content, hit.headers["X-TrustMeBank-Signature"]
     )
-    assert not verify_webhook_signature("wrong-secret", hit.content, hit.headers["X-MockBank-Signature"])
+    assert not verify_webhook_signature("wrong-secret", hit.content, hit.headers["X-TrustMeBank-Signature"])
     body = json.loads(hit.content)
     assert body["id"] == delivery.id and body["event"] == "payment.completed"
     assert body["data"]["amount"] == "500.00" and body["data"]["reference"] == "REM-92831"

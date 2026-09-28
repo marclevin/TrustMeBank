@@ -1,6 +1,6 @@
 # OAuth and consent
 
-MockBank uses the OAuth 2.0 Authorization Code grant with a confidential client. Your backend
+TrustMeBank uses the OAuth 2.0 Authorization Code grant with a confidential client. Your backend
 holds the `client_secret`; the browser never sees it.
 
 ## Scopes
@@ -18,7 +18,7 @@ Ask for the smallest set you need. The customer sees one line per scope on the c
 
 ```
 ┌─────────┐                                   ┌──────────┐
-│ Browser │                                   │ MockBank │
+│ Browser │                                   │ TrustMeBank │
 └────┬────┘                                   └────┬─────┘
      │ 1. GET /oauth/authorize?...&state=S         │
      │──────────────────────────────────────────▶ │
@@ -58,9 +58,9 @@ GET /oauth/authorize
 
 What can go wrong:
 
-- Unknown `client_id` or unregistered `redirect_uri`: MockBank shows an error page and does
+- Unknown `client_id` or unregistered `redirect_uri`: TrustMeBank shows an error page and does
   **not** redirect. It cannot safely send the user to a URI it does not trust.
-- Bad `response_type`, unknown scope or missing `state`: MockBank redirects to your
+- Bad `response_type`, unknown scope or missing `state`: TrustMeBank redirects to your
   `redirect_uri` with `?error=invalid_request|invalid_scope|unsupported_response_type&error_description=...&state=...`.
 - Customer clicks Reject: `?error=access_denied&state=...`.
 
@@ -69,7 +69,7 @@ What can go wrong:
 Without `state`, an attacker could send a victim a link to `https://yourapp/callback?code=...`
 where the code belongs to the attacker's bank account. The victim's session in your app would
 then be linked to the attacker's bank data (a login CSRF). `state` binds the callback to the
-browser session that started the flow. MockBank cannot check it for you: only your app knows
+browser session that started the flow. TrustMeBank cannot check it for you: only your app knows
 what it stored.
 
 ### 2. Token exchange
@@ -79,10 +79,10 @@ POST /oauth/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=authorization_code
-&code=mbac_...
+&code=tmbac_...
 &redirect_uri=http://localhost:5000/callback
 &client_id=app_remitx_demo
-&client_secret=mbsk_remitx_demo_secret
+&client_secret=tmbsk_remitx_demo_secret
 ```
 
 You may send `client_id` and `client_secret` as HTTP Basic auth instead of form fields.
@@ -91,10 +91,10 @@ Response:
 
 ```json
 {
-  "access_token": "mbat_...",
+  "access_token": "tmbat_...",
   "token_type": "Bearer",
   "expires_in": 3600,
-  "refresh_token": "mbrt_...",
+  "refresh_token": "tmbrt_...",
   "scope": "accounts balances transactions payments",
   "consent_id": "cns_..."
 }
@@ -114,7 +114,7 @@ Using a code twice is treated as an attack: every token issued from that code is
 ### 3. Calling the API
 
 ```
-Authorization: Bearer mbat_...
+Authorization: Bearer tmbat_...
 ```
 
 Store tokens server side, per user. Treat them like passwords.
@@ -125,7 +125,7 @@ Access tokens expire after one hour. When you get `401 invalid_token`, refresh:
 
 ```
 POST /oauth/token
-grant_type=refresh_token&refresh_token=mbrt_...&client_id=...&client_secret=...
+grant_type=refresh_token&refresh_token=tmbrt_...&client_id=...&client_secret=...
 ```
 
 You get a new access token **and a new refresh token**. The old refresh token stops working.

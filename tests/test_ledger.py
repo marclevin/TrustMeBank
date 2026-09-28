@@ -3,17 +3,17 @@ from decimal import Decimal
 
 import pytest
 
-from mockbank.db import new_session
-from mockbank.models import Account, Journal, Transaction
-from mockbank.services import seed as seed_service
-from mockbank.services.ledger import (
+from tests.conftest import account_by_number
+from trustmebank.db import new_session
+from trustmebank.models import Account, Journal, Transaction
+from trustmebank.services import seed as seed_service
+from trustmebank.services.ledger import (
     AccountClosed,
     InsufficientFunds,
     InvalidTransfer,
     check_integrity,
     post_transfer,
 )
-from tests.conftest import account_by_number
 
 
 def test_transfer_updates_both_balances_and_balances_journal(db):

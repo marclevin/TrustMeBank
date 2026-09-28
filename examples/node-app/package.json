@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Minimal fintech app integrating with MockBank (Express)",
+  "description": "Minimal fintech app integrating with TrustMeBank (Express)",
   "scripts": { "start": "node app.js" },
   "dependencies": {
     "cookie-session": "^2.1.0",

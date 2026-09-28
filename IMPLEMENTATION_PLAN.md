@@ -1,4 +1,4 @@
-# MockBank Implementation Plan
+# TrustMeBank Implementation Plan
 
 **Status: all milestones complete.** The test suite (78 tests) covers every milestone's
 acceptance criteria, and both example applications have been driven end to end against a
@@ -10,12 +10,12 @@ tested state and ends with a commit. Later milestones do not require rework of e
 ## Milestone 0: Skeleton
 
 - `pyproject.toml`, pinned `requirements.txt`, `.env.example`, `.gitignore`
-- `mockbank/config.py`, `db.py`, `main.py` with `/health`
+- `trustmebank/config.py`, `db.py`, `main.py` with `/health`
 - Alembic configured against `DATABASE_URL`
 - `Dockerfile`, `docker-compose.yml`, `entrypoint.sh`
 - Test harness: `tests/conftest.py` creates a clean schema per test session on `TEST_DATABASE_URL`
 
-Done when: `uvicorn mockbank.main:app` serves `/health` and `pytest` runs one passing test.
+Done when: `uvicorn trustmebank.main:app` serves `/health` and `pytest` runs one passing test.
 
 ## Milestone 1: Models, ledger, seed
 

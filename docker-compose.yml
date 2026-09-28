@@ -2,13 +2,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: mockbank
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mockbank}
-      POSTGRES_DB: mockbank
+      POSTGRES_USER: trustmebank
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trustmebank}
+      POSTGRES_DB: trustmebank
     volumes:
-      - mockbank-db:/var/lib/postgresql/data
+      - trustmebank-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mockbank -d mockbank"]
+      test: ["CMD-SHELL", "pg_isready -U trustmebank -d trustmebank"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -17,9 +17,9 @@ services:
   app:
     build: .
     ports:
-      - "${MOCKBANK_PORT:-8000}:8000"
+      - "${TRUSTMEBANK_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://mockbank:${POSTGRES_PASSWORD:-mockbank}@db:5432/mockbank
+      DATABASE_URL: postgresql+psycopg://trustmebank:${POSTGRES_PASSWORD:-trustmebank}@db:5432/trustmebank
       SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
@@ -37,4 +37,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  mockbank-db:
+  trustmebank-db:

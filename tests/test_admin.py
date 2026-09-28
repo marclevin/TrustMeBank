@@ -1,8 +1,5 @@
 import re
 
-from mockbank.models import Application, Customer, Payment, WebhookDelivery
-from mockbank.security import sha256
-from mockbank.services import seed as seed_service
 from tests.conftest import (
     account_by_number,
     admin_login,
@@ -11,6 +8,9 @@ from tests.conftest import (
     customer_by_email,
     get_token,
 )
+from trustmebank.models import Application, Customer, Payment, WebhookDelivery
+from trustmebank.security import sha256
+from trustmebank.services import seed as seed_service
 
 
 def test_admin_requires_login(client):
@@ -43,7 +43,7 @@ def test_register_application_through_form(client, db):
     )
     assert r.status_code == 200, r.text
     client_id = re.search(r'<div class="secret">(app_[a-z0-9]+)</div>', r.text).group(1)
-    secret = re.search(r'<div class="secret">(mbsk_[^<]+)</div>', r.text).group(1)
+    secret = re.search(r'<div class="secret">(tmbsk_[^<]+)</div>', r.text).group(1)
     app = db.get(Application, client_id)
     assert app.client_secret_hash == sha256(secret)
     assert app.redirect_uris == ["http://localhost:4000/callback", "http://localhost:4000/return"]
@@ -57,7 +57,7 @@ def test_register_application_through_form(client, db):
     r = client.post(f"/admin/applications/{app.id}/regenerate-secret", data={"csrf": csrf_from(detail.text)})
     assert r.status_code == 303
     detail = client.get(f"/admin/applications/{app.id}")
-    new_secret = re.search(r'<div class="secret">(mbsk_[^<]+)</div>', detail.text).group(1)
+    new_secret = re.search(r'<div class="secret">(tmbsk_[^<]+)</div>', detail.text).group(1)
     db.expire_all()
     assert db.get(Application, app.id).client_secret_hash == sha256(new_secret) != sha256(secret)
     client.post(f"/admin/applications/{app.id}/toggle-active", data={"csrf": csrf_from(detail.text)})
@@ -195,7 +195,7 @@ def test_reset_activity_keeps_apps_and_restores_seed(client, db, registered_app)
     restored = account_by_number(db, "1000123456")
     assert restored.id == alice_id and restored.balance == seed_service.SEED_CUSTOMERS[0].accounts[0].opening
     assert account_by_number(db, "1000987654").balance == 250000
-    from mockbank.services.ledger import check_integrity
+    from trustmebank.services.ledger import check_integrity
 
     assert check_integrity(db).ok
 

@@ -1,12 +1,12 @@
 # Administrator guide
 
-Everything an instructor needs to run MockBank for a class. Nothing here requires touching the
+Everything an instructor needs to run TrustMeBank for a class. Nothing here requires touching the
 database directly.
 
 ## Deploying
 
 ```bash
-git clone <this repository> mockbank && cd mockbank
+git clone <this repository> trustmebank && cd trustmebank
 cp .env.example .env
 # edit .env: set SECRET_KEY, ADMIN_PASSWORD and PUBLIC_BASE_URL
 docker compose up -d
@@ -19,18 +19,18 @@ and starts serving on port 8000. Visit `PUBLIC_BASE_URL/admin` and log in with
 For a class, put it behind HTTPS (Caddy example):
 
 ```
-mockbank.example.ac.za {
+trustmebank.example.ac.za {
     reverse_proxy localhost:8000
 }
 ```
 
-and set `PUBLIC_BASE_URL=https://mockbank.example.ac.za` and `SESSION_COOKIE_SECURE=true`.
+and set `PUBLIC_BASE_URL=https://trustmebank.example.ac.za` and `SESSION_COOKIE_SECURE=true`.
 Restart with `docker compose up -d`.
 
 Upgrading: `git pull && docker compose build && docker compose up -d`. Migrations run
 automatically.
 
-Backups: `docker compose exec db pg_dump -U mockbank mockbank > mockbank-$(date +%F).sql`.
+Backups: `docker compose exec db pg_dump -U trustmebank trustmebank > trustmebank-$(date +%F).sql`.
 
 Logs: `docker compose logs -f app`.
 
@@ -52,9 +52,9 @@ Send the team the credentials, the base URL and a link to `/guide/getting-starte
 From the command line instead:
 
 ```bash
-docker compose exec app mockbank create-app --name RemitX \
+docker compose exec app tmb create-app --name RemitX \
   --redirect-uri http://localhost:5000/callback --redirect-uri http://localhost:5000/payments/return \
-  --webhook-url https://remitx.example/webhooks/mockbank \
+  --webhook-url https://remitx.example/webhooks/trustmebank \
   --settlement-email remitx-ops@example.com --settlement-balance 10000.00
 ```
 
@@ -72,7 +72,7 @@ docker compose exec app mockbank create-app --name RemitX \
 | Retry a failed webhook | Delivery page, **Retry now** |
 | Inspect a payment end to end | **Payments**, open it: ledger legs, deliveries and audit trail |
 | Revoke a consent | **Consents** or the customer page |
-| Check the ledger | Dashboard, **Ledger integrity** (also `mockbank check-ledger`) |
+| Check the ledger | Dashboard, **Ledger integrity** (also `tmb check-ledger`) |
 | Audit who did what | **Audit log**, filter by action prefix such as `payment.` or `admin.` |
 
 ## Resetting
@@ -86,7 +86,7 @@ Dashboard, **Reset the environment**, type `RESET`:
 - **Full reset**: everything goes, including the applications you registered. The seed runs
   again.
 
-CLI: `docker compose exec app mockbank reset-activity` or `mockbank reset --yes`.
+CLI: `docker compose exec app tmb reset-activity` or `tmb reset --yes`.
 
 ## Configuration knobs worth knowing
 
@@ -111,9 +111,9 @@ customers get drained by many teams testing payments, top them up or reset activ
 | Bob van der Merwe | `bob@example.com` / `bob123` | `1000234567` Everyday R3,870.25 |
 | Carol Pillay | `carol@example.com` / `carol123` | `1000345678` Everyday R980.00 |
 | RemitX (Pty) Ltd | `remitx@example.com` / `remitx123` | `1000987654` Settlement R250,000.00 |
-| MockBank Treasury (system) | cannot log in | `1000000000`, source of all seeded money |
-| MockBank Clearing (system) | cannot log in | `1000000001`, destination of seeded card purchases |
+| TrustMeBank Treasury (system) | cannot log in | `1000000000`, source of all seeded money |
+| TrustMeBank Clearing (system) | cannot log in | `1000000001`, destination of seeded card purchases |
 
-Demo application: `app_remitx_demo` / `mbsk_remitx_demo_secret`, webhook secret
+Demo application: `app_remitx_demo` / `tmbsk_remitx_demo_secret`, webhook secret
 `whsec_remitx_demo_secret`, redirect URIs on `localhost:5000` and `localhost:3000`, plus the
 Swagger UI redirect. It is intended for the example apps and for trying the API from `/docs`.

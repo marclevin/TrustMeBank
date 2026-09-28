@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from mockbank.money import InvalidAmount, fmt, fmt_rand, parse_amount
+from trustmebank.money import InvalidAmount, fmt, fmt_rand, parse_amount
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
-from mockbank.models import utcnow
 from tests.conftest import BOB, bearer, get_token
+from trustmebank.models import utcnow
 
 
 def test_scope_enforcement(client, api, registered_app):

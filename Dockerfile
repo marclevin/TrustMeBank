@@ -14,12 +14,12 @@ RUN pip install -r requirements.txt
 # The application runs straight from the source tree; no package build step.
 COPY alembic.ini entrypoint.sh ./
 COPY alembic ./alembic
-COPY mockbank ./mockbank
+COPY trustmebank ./trustmebank
 COPY docs ./docs
 RUN chmod +x /app/entrypoint.sh \
-    && printf '#!/bin/sh\nexec python -m mockbank.cli "$@"\n' > /usr/local/bin/mockbank \
-    && chmod +x /usr/local/bin/mockbank
+    && printf '#!/bin/sh\nexec python -m trustmebank.cli "$@"\n' > /usr/local/bin/tmb \
+    && chmod +x /usr/local/bin/tmb
 
 EXPOSE 8000
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["uvicorn", "mockbank.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "trustmebank.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]

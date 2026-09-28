@@ -1,10 +1,11 @@
-# MockBank
+# TrustMeBank (TMB)
 
-A small, realistic mock bank for a university Financial Technology course. Student teams build
-fintech applications that integrate with MockBank through an Open Banking style API:
+TrustMeBank, TMB for short, is a small, realistic simulated bank for a university Financial
+Technology course. Student teams build fintech applications that integrate with TrustMeBank
+through an Open Banking style API:
 
 ```
-Student App → OAuth consent → Account API → Payment initiation → Customer approves on MockBank
+Student App → OAuth consent → Account API → Payment initiation → Customer approves on TrustMeBank
            → Double-entry ledger → HMAC-signed webhook → Student App reconciles
 ```
 
@@ -54,7 +55,7 @@ Seeded credentials for development:
 | Bob van der Merwe | `bob@example.com` / `bob123` | Everyday `1000234567` |
 | Carol Pillay | `carol@example.com` / `carol123` | Everyday `1000345678` |
 | RemitX (Pty) Ltd | `remitx@example.com` / `remitx123` | Settlement account `1000987654` |
-| Demo application | `app_remitx_demo` / `mbsk_remitx_demo_secret` | Webhook secret `whsec_remitx_demo_secret` |
+| Demo application | `app_remitx_demo` / `tmbsk_remitx_demo_secret` | Webhook secret `whsec_remitx_demo_secret` |
 
 ## For the instructor
 
@@ -63,12 +64,12 @@ in one form (application plus settlement customer and account), day-to-day tasks
 reset modes. Command line equivalents:
 
 ```bash
-docker compose exec app mockbank --help
-docker compose exec app mockbank seed            # idempotent
-docker compose exec app mockbank reset-activity  # wipe activity, keep customers and apps
-docker compose exec app mockbank reset --yes     # wipe everything and re-seed
-docker compose exec app mockbank check-ledger    # balances == sum of transactions
-docker compose exec app mockbank create-app --name RemitX --redirect-uri http://localhost:5000/callback
+docker compose exec app tmb --help
+docker compose exec app tmb seed            # idempotent
+docker compose exec app tmb reset-activity  # wipe activity, keep customers and apps
+docker compose exec app tmb reset --yes     # wipe everything and re-seed
+docker compose exec app tmb check-ledger    # balances == sum of transactions
+docker compose exec app tmb create-app --name RemitX --redirect-uri http://localhost:5000/callback
 ```
 
 ## Design documents
@@ -87,16 +88,16 @@ Requires Python 3.11+ and a PostgreSQL 16 server.
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt && pip install -e .
-createdb mockbank && createdb mockbank_test     # or use docker compose up db
-export DATABASE_URL=postgresql+psycopg://mockbank:mockbank@localhost:5432/mockbank
-alembic upgrade head && mockbank seed
-uvicorn mockbank.main:app --reload
+createdb trustmebank && createdb trustmebank_test     # or use docker compose up db
+export DATABASE_URL=postgresql+psycopg://trustmebank:trustmebank@localhost:5432/trustmebank
+alembic upgrade head && tmb seed
+uvicorn trustmebank.main:app --reload
 ```
 
 Tests run against a real PostgreSQL because the ledger relies on row locks:
 
 ```bash
-export TEST_DATABASE_URL=postgresql+psycopg://mockbank:mockbank@localhost:5432/mockbank_test
+export TEST_DATABASE_URL=postgresql+psycopg://trustmebank:trustmebank@localhost:5432/trustmebank_test
 pytest
 ruff check .
 ```
@@ -107,13 +108,13 @@ accounts, initiate payment, approve, verify the ledger, deliver and verify the s
 Layout:
 
 ```
-mockbank/
+trustmebank/
   services/   ledger, oauth, payments, webhooks, seed, admin  (all business rules)
   api/        JSON routers (/oauth/token, /api/v1/...)
   web/        HTML routers (login, accounts, consent, payment authorisation, admin, guides)
   templates/  Jinja2
   worker.py   background thread: delayed settlement and webhook delivery
-  cli.py      mockbank command
+  cli.py      trustmebank command
 alembic/      migrations
 docs/         student guides, rendered at /guide
 examples/     python-app (Flask), node-app (Express)
@@ -125,7 +126,7 @@ tests/
 Passwords are bcrypt hashed; client secrets, authorization codes and tokens are stored as
 SHA-256 hashes. Codes are single use and expire in 5 minutes; access tokens in 1 hour; refresh
 tokens rotate. Redirect URIs must match exactly. Scopes are enforced on every endpoint.
-Payments can only be executed through the customer's own session on MockBank's approval page,
+Payments can only be executed through the customer's own session on TrustMeBank's approval page,
 protected by a CSRF token. Webhooks are HMAC-SHA256 signed. Money is `Decimal` and
 `NUMERIC(18,2)` throughout; there is no floating point in the money path.
 

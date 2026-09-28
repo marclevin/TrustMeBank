@@ -1,12 +1,12 @@
-from mockbank.config import get_settings
-from mockbank.ratelimit import limiter
+from trustmebank.config import get_settings
+from trustmebank.ratelimit import limiter
 
 
 def test_api_rate_limit(api, monkeypatch):
     settings = get_settings()
     monkeypatch.setattr(settings, "rate_limit_api_per_minute", 3)
     limiter.reset()
-    headers = {"Authorization": "Bearer mbat_ratelimit_test"}
+    headers = {"Authorization": "Bearer tmbat_ratelimit_test"}
     codes = [api.get("/api/v1/me", headers=headers).status_code for _ in range(4)]
     assert codes == [401, 401, 401, 429]
     last = api.get("/api/v1/me", headers=headers)

@@ -1,6 +1,6 @@
 # API reference
 
-Base URL: the MockBank deployment, for example `http://localhost:8000`. Interactive
+Base URL: the TrustMeBank deployment, for example `http://localhost:8000`. Interactive
 documentation with request builders is at `/docs` (Swagger UI) and the raw schema at
 `/openapi.json`.
 

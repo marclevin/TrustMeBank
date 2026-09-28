@@ -1,12 +1,12 @@
-"""RemitX: a minimal fintech app integrating with MockBank.
+"""RemitX: a minimal fintech app integrating with TrustMeBank.
 
-Read top to bottom. Every MockBank interaction is in this one file:
-  /connect            -> redirect to MockBank's consent screen (OAuth authorization request)
+Read top to bottom. Every TrustMeBank interaction is in this one file:
+  /connect            -> redirect to TrustMeBank's consent screen (OAuth authorization request)
   /callback           -> exchange the code for tokens, link the bank customer to the RemitX user
   /                   -> show bank accounts (Account Information API) and the RemitX wallet
   /deposit            -> initiate a payment to RemitX's settlement account (Payment Initiation API)
-  /payments/return    -> the customer is back from MockBank; show status, do NOT credit yet
-  /webhooks/mockbank  -> verify the HMAC signature, then credit the wallet exactly once
+  /payments/return    -> the customer is back from TrustMeBank; show status, do NOT credit yet
+  /webhooks/trustmebank  -> verify the HMAC signature, then credit the wallet exactly once
 """
 
 import hashlib
@@ -21,9 +21,9 @@ from urllib.parse import urlparse
 import requests
 from flask import Flask, abort, redirect, render_template_string, request, session, url_for
 
-MOCKBANK_URL = os.environ.get("MOCKBANK_URL", "http://localhost:8000").rstrip("/")
+TRUSTMEBANK_URL = os.environ.get("TRUSTMEBANK_URL", "http://localhost:8000").rstrip("/")
 CLIENT_ID = os.environ.get("CLIENT_ID", "app_remitx_demo")
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "mbsk_remitx_demo_secret")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "tmbsk_remitx_demo_secret")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "whsec_remitx_demo_secret")
 SETTLEMENT_ACCOUNT_NUMBER = os.environ.get("SETTLEMENT_ACCOUNT_NUMBER", "1000987654")
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000").rstrip("/")
@@ -33,9 +33,9 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-only")
 
 # RemitX's own state. In a real app this is a database. Note the separation:
-#   bank_links  : the customer's MockBank tokens (bank money lives at MockBank)
+#   bank_links  : the customer's TrustMeBank tokens (bank money lives at TrustMeBank)
 #   wallets     : RemitX's internal ledger (platform balance lives here)
-#   deposits    : our record of each payment we initiated, keyed by MockBank payment_id
+#   deposits    : our record of each payment we initiated, keyed by TrustMeBank payment_id
 #   seen_events : webhook event ids we already processed (deliveries can repeat)
 bank_links: dict[str, dict] = {}
 wallets: dict[str, Decimal] = {}
@@ -55,7 +55,7 @@ def bank_get(user_id: str, path: str, **params):
     if not link:
         return None
     r = requests.get(
-        f"{MOCKBANK_URL}{path}",
+        f"{TRUSTMEBANK_URL}{path}",
         params=params,
         timeout=10,
         headers={"Authorization": f"Bearer {link['access_token']}"},
@@ -73,7 +73,7 @@ def bank_get(user_id: str, path: str, **params):
 def refresh_tokens(user_id: str) -> bool:
     link = bank_links[user_id]
     r = requests.post(
-        f"{MOCKBANK_URL}/oauth/token",
+        f"{TRUSTMEBANK_URL}/oauth/token",
         timeout=10,
         data={
             "grant_type": "refresh_token",
@@ -102,7 +102,7 @@ def connect():
         "scope": SCOPES,
         "state": state,
     }
-    return redirect(f"{MOCKBANK_URL}/oauth/authorize?" + requests.compat.urlencode(params))
+    return redirect(f"{TRUSTMEBANK_URL}/oauth/authorize?" + requests.compat.urlencode(params))
 
 
 @app.get("/callback")
@@ -110,9 +110,9 @@ def callback():
     if request.args.get("state") != session.pop("oauth_state", None):
         abort(400, "state mismatch: this callback did not come from a flow we started")
     if "error" in request.args:
-        return f"MockBank said: {request.args['error']}. <a href='/'>Back</a>", 400
+        return f"TrustMeBank said: {request.args['error']}. <a href='/'>Back</a>", 400
     r = requests.post(
-        f"{MOCKBANK_URL}/oauth/token",
+        f"{TRUSTMEBANK_URL}/oauth/token",
         timeout=10,
         data={
             "grant_type": "authorization_code",
@@ -128,7 +128,7 @@ def callback():
     bank_links[user_id] = r.json()
     me = bank_get(user_id, "/api/v1/me")
     bank_links[user_id]["customer"] = me
-    print(f"[remitx] linked {user_id} to MockBank customer {me['customer_id']} ({me['full_name']})")
+    print(f"[remitx] linked {user_id} to TrustMeBank customer {me['customer_id']} ({me['full_name']})")
     return redirect(url_for("home"))
 
 
@@ -146,16 +146,16 @@ table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #eee;pad
 <p style="font-size:1.6em">R{{ wallet }}</p>
 <p>This number lives in RemitX, not at the bank. It only changes when a verified webhook says a deposit completed.</p></div>
 {% if not link %}
-<div class="card"><h3>Bank account</h3><p>Not connected.</p><a class="btn" href="/connect">Connect your bank (MockBank)</a></div>
+<div class="card"><h3>Bank account</h3><p>Not connected.</p><a class="btn" href="/connect">Connect your bank (TrustMeBank)</a></div>
 {% else %}
-<div class="card"><h3>Bank accounts at MockBank (bank money)</h3>
+<div class="card"><h3>Bank accounts at TrustMeBank (bank money)</h3>
 <p>Connected as {{ link.customer.full_name }}, scopes: {{ link.scope }}</p>
 <table><tr><th>Account</th><th>Number</th><th>Balance</th><th></th></tr>
 {% for a in accounts %}<tr><td>{{ a.name }}</td><td>{{ a.account_number }}</td><td>R{{ a.balance }}</td>
 <td><form method="post" action="/deposit"><input type="hidden" name="account_id" value="{{ a.id }}"><button class="btn">Deposit R100 into RemitX</button></form></td></tr>{% endfor %}
 </table></div>
 {% endif %}
-<div class="card"><h3>Deposits (RemitX's records, keyed by MockBank payment_id)</h3>
+<div class="card"><h3>Deposits (RemitX's records, keyed by TrustMeBank payment_id)</h3>
 <table><tr><th>payment_id</th><th>reference</th><th>amount</th><th>status</th><th>credited?</th></tr>
 {% for d in deposits %}<tr><td>{{ d.payment_id }}</td><td>{{ d.reference }}</td><td>R{{ d.amount }}</td><td>{{ d.status }}</td><td>{{ 'yes' if d.credited else 'no' }}</td></tr>{% endfor %}
 </table></div>
@@ -189,7 +189,7 @@ def deposit():
         return redirect(url_for("connect"))
     reference = f"DEP-{uuid.uuid4().hex[:8].upper()}"  # unique, so reconciliation is unambiguous
     r = requests.post(
-        f"{MOCKBANK_URL}/api/v1/payments",
+        f"{TRUSTMEBANK_URL}/api/v1/payments",
         timeout=10,
         headers={"Authorization": f"Bearer {link['access_token']}", "Idempotency-Key": str(uuid.uuid4())},
         json={
@@ -251,10 +251,10 @@ def verify_signature(body: bytes, header: str, tolerance: int = 300) -> bool:
     return hmac.compare_digest(expected, v1)
 
 
-@app.post("/webhooks/mockbank")
+@app.post("/webhooks/trustmebank")
 def webhook():
     body = request.get_data()  # raw bytes, never re-serialised
-    if not verify_signature(body, request.headers.get("X-MockBank-Signature", "")):
+    if not verify_signature(body, request.headers.get("X-TrustMeBank-Signature", "")):
         print("[remitx] webhook with BAD signature rejected")
         abort(400)
     event = request.get_json(force=True)
@@ -278,5 +278,5 @@ def webhook():
 
 
 if __name__ == "__main__":
-    print(f"RemitX example on {BASE_URL}, talking to MockBank at {MOCKBANK_URL}")
+    print(f"RemitX example on {BASE_URL}, talking to TrustMeBank at {TRUSTMEBANK_URL}")
     app.run(host="0.0.0.0", port=urlparse(BASE_URL).port or 5000, debug=True)

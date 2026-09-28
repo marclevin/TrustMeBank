@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Connected apps{% endblock %}
+{% block content %}
+<h1>Connected apps</h1>
+<p class="lead">Applications you have allowed to access your TrustMeBank information.</p>
+{% if consents %}
+<table>
+  <tr><th>Application</th><th>Permissions</th><th>Granted</th><th>Expires</th><th></th></tr>
+  {% for c in consents %}
+  <tr>
+    <td><strong>{{ c.application.name }}</strong><br><span class="small muted">{{ c.application.owner_label }}</span></td>
+    <td class="small">{% for s in c.scopes %}{{ scope_labels[s] }}<br>{% endfor %}</td>
+    <td class="small">{{ c.created_at|dt }}</td>
+    <td class="small">{{ c.expires_at|dt }}</td>
+    <td><form method="post" action="/connected-apps/{{ c.id }}/revoke"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small danger" type="submit">Revoke</button></form></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="card"><p class="muted">No applications are connected to your account.</p></div>
+{% endif %}
+{% endblock %}

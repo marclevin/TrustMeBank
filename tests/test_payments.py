@@ -2,9 +2,6 @@ from decimal import Decimal
 
 import pytest
 
-from mockbank.config import get_settings
-from mockbank.models import Payment, WebhookDelivery
-from mockbank.services import payments as payment_service
 from tests.conftest import (
     BOB,
     REMITX_ACCOUNT_NUMBER,
@@ -13,6 +10,9 @@ from tests.conftest import (
     csrf_from,
     get_token,
 )
+from trustmebank.config import get_settings
+from trustmebank.models import Payment, WebhookDelivery
+from trustmebank.services import payments as payment_service
 
 
 def _create(api, token, account_id, **overrides):

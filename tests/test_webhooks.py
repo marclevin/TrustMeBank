@@ -3,12 +3,12 @@ from datetime import timedelta
 
 import httpx
 
-from mockbank import worker
-from mockbank.models import Application, WebhookDelivery, utcnow
-from mockbank.security import sign_webhook, verify_webhook_signature
-from mockbank.services import webhooks
-from mockbank.services.webhooks import MAX_ATTEMPTS, RETRY_SCHEDULE
 from tests.conftest import REMITX_ACCOUNT_NUMBER, bearer, csrf_from, get_token
+from trustmebank import worker
+from trustmebank.models import Application, WebhookDelivery, utcnow
+from trustmebank.security import sign_webhook, verify_webhook_signature
+from trustmebank.services import webhooks
+from trustmebank.services.webhooks import MAX_ATTEMPTS, RETRY_SCHEDULE
 
 
 def test_signature_roundtrip():
@@ -147,4 +147,4 @@ def test_worker_run_once_delivers(db, registered_app):
     ) as http:
         stats = worker.run_once(http)
     assert stats["webhooks_attempted"] >= 1 and seen
-    assert seen[0].headers["User-Agent"].startswith("MockBank-Webhooks")
+    assert seen[0].headers["User-Agent"].startswith("TrustMeBank-Webhooks")

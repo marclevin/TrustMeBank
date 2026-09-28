@@ -1,19 +1,19 @@
-// RemitX: a minimal fintech app integrating with MockBank (Express).
+// RemitX: a minimal fintech app integrating with TrustMeBank (Express).
 // See examples/python-app/app.py for a line-by-line explanation of the same flow.
 
 import crypto from "node:crypto";
 import cookieSession from "cookie-session";
 import express from "express";
 
-const MOCKBANK_URL = (process.env.MOCKBANK_URL || "http://localhost:8000").replace(/\/$/, "");
+const TRUSTMEBANK_URL = (process.env.TRUSTMEBANK_URL || "http://localhost:8000").replace(/\/$/, "");
 const CLIENT_ID = process.env.CLIENT_ID || "app_remitx_demo";
-const CLIENT_SECRET = process.env.CLIENT_SECRET || "mbsk_remitx_demo_secret";
+const CLIENT_SECRET = process.env.CLIENT_SECRET || "tmbsk_remitx_demo_secret";
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "whsec_remitx_demo_secret";
 const SETTLEMENT_ACCOUNT_NUMBER = process.env.SETTLEMENT_ACCOUNT_NUMBER || "1000987654";
 const BASE_URL = (process.env.BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const SCOPES = "accounts balances transactions payments";
 
-// RemitX's own state (in memory for the demo). Bank money lives at MockBank; the wallet lives here.
+// RemitX's own state (in memory for the demo). Bank money lives at TrustMeBank; the wallet lives here.
 const bankLinks = new Map();   // userId -> token response + customer
 const wallets = new Map();     // userId -> cents (integer, never floats for money)
 const deposits = new Map();    // paymentId -> our record
@@ -30,7 +30,7 @@ function userId(req) {
 async function bankGet(uid, path) {
   const link = bankLinks.get(uid);
   if (!link) return null;
-  let res = await fetch(MOCKBANK_URL + path, { headers: { Authorization: `Bearer ${link.access_token}` } });
+  let res = await fetch(TRUSTMEBANK_URL + path, { headers: { Authorization: `Bearer ${link.access_token}` } });
   if (res.status === 401) {
     if (await refresh(uid)) return bankGet(uid, path);
     bankLinks.delete(uid);
@@ -42,7 +42,7 @@ async function bankGet(uid, path) {
 
 async function refresh(uid) {
   const link = bankLinks.get(uid);
-  const res = await fetch(`${MOCKBANK_URL}/oauth/token`, {
+  const res = await fetch(`${TRUSTMEBANK_URL}/oauth/token`, {
     method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: link.refresh_token,
                                 client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
@@ -58,14 +58,14 @@ app.get("/connect", (req, res) => {
   req.session.oauthState = state;
   const params = new URLSearchParams({ response_type: "code", client_id: CLIENT_ID,
     redirect_uri: `${BASE_URL}/callback`, scope: SCOPES, state });
-  res.redirect(`${MOCKBANK_URL}/oauth/authorize?${params}`);
+  res.redirect(`${TRUSTMEBANK_URL}/oauth/authorize?${params}`);
 });
 
 app.get("/callback", async (req, res) => {
   const expected = req.session.oauthState; delete req.session.oauthState;
   if (!expected || req.query.state !== expected) return res.status(400).send("state mismatch");
-  if (req.query.error) return res.status(400).send(`MockBank said: ${req.query.error}`);
-  const tokenRes = await fetch(`${MOCKBANK_URL}/oauth/token`, {
+  if (req.query.error) return res.status(400).send(`TrustMeBank said: ${req.query.error}`);
+  const tokenRes = await fetch(`${TRUSTMEBANK_URL}/oauth/token`, {
     method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "authorization_code", code: req.query.code,
       redirect_uri: `${BASE_URL}/callback`, client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
@@ -74,7 +74,7 @@ app.get("/callback", async (req, res) => {
   const uid = userId(req);
   bankLinks.set(uid, await tokenRes.json());
   bankLinks.get(uid).customer = await bankGet(uid, "/api/v1/me");
-  console.log(`[remitx] linked ${uid} to MockBank customer ${bankLinks.get(uid).customer.customer_id}`);
+  console.log(`[remitx] linked ${uid} to TrustMeBank customer ${bankLinks.get(uid).customer.customer_id}`);
   res.redirect("/");
 });
 
@@ -92,8 +92,8 @@ app.get("/", async (req, res) => {
 <h1>RemitX <small style="color:#888">example fintech app (Node)</small></h1>
 ${req.query.msg ? `<p style="background:#fff3cd;padding:10px">${escape(req.query.msg)}</p>` : ""}
 <div class="card"><h3>Your RemitX wallet (internal ledger)</h3><p style="font-size:1.6em">${rand(wallets.get(uid) ?? 0)}</p></div>
-${!link ? `<div class="card"><a class="btn" href="/connect">Connect your bank (MockBank)</a></div>` : `
-<div class="card"><h3>Bank accounts at MockBank</h3><p>Connected as ${escape(link.customer.full_name)}</p>
+${!link ? `<div class="card"><a class="btn" href="/connect">Connect your bank (TrustMeBank)</a></div>` : `
+<div class="card"><h3>Bank accounts at TrustMeBank</h3><p>Connected as ${escape(link.customer.full_name)}</p>
 <table><tr><th>Account</th><th>Number</th><th>Balance</th><th></th></tr>
 ${accounts.map((a) => `<tr><td>${escape(a.name)}</td><td>${a.account_number}</td><td>R${a.balance}</td>
 <td><form method="post" action="/deposit"><input type="hidden" name="account_id" value="${a.id}"><button class="btn">Deposit R100</button></form></td></tr>`).join("")}
@@ -111,7 +111,7 @@ app.post("/deposit", express.urlencoded({ extended: false }), async (req, res) =
   const link = bankLinks.get(uid);
   if (!link) return res.redirect("/connect");
   const reference = "DEP-" + crypto.randomBytes(4).toString("hex").toUpperCase();
-  const r = await fetch(`${MOCKBANK_URL}/api/v1/payments`, {
+  const r = await fetch(`${TRUSTMEBANK_URL}/api/v1/payments`, {
     method: "POST",
     headers: { Authorization: `Bearer ${link.access_token}`, "Content-Type": "application/json",
                "Idempotency-Key": crypto.randomUUID() },
@@ -145,9 +145,9 @@ function verifySignature(rawBody, header, tolerance = 300) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-// express.raw keeps the exact bytes MockBank signed. express.json() would re-serialise them.
-app.post("/webhooks/mockbank", express.raw({ type: "application/json" }), (req, res) => {
-  if (!verifySignature(req.body, req.get("X-MockBank-Signature"))) {
+// express.raw keeps the exact bytes TrustMeBank signed. express.json() would re-serialise them.
+app.post("/webhooks/trustmebank", express.raw({ type: "application/json" }), (req, res) => {
+  if (!verifySignature(req.body, req.get("X-TrustMeBank-Signature"))) {
     console.log("[remitx] webhook with BAD signature rejected");
     return res.sendStatus(400);
   }
@@ -168,4 +168,4 @@ app.post("/webhooks/mockbank", express.raw({ type: "application/json" }), (req, 
 });
 
 const port = Number(new URL(BASE_URL).port || 3000);
-app.listen(port, () => console.log(`RemitX example on ${BASE_URL}, talking to MockBank at ${MOCKBANK_URL}`));
+app.listen(port, () => console.log(`RemitX example on ${BASE_URL}, talking to TrustMeBank at ${TRUSTMEBANK_URL}`));

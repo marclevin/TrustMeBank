@@ -6,22 +6,22 @@ from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
-from mockbank.db import Base
+from trustmebank.db import Base
 
 
 def test_alembic_upgrade_matches_models():
-    url = os.environ["TEST_DATABASE_URL"].replace("mockbank_test", "mockbank_test_migrations")
+    url = os.environ["TEST_DATABASE_URL"].replace("trustmebank_test", "trustmebank_test_migrations")
     admin = create_engine(os.environ["TEST_DATABASE_URL"], isolation_level="AUTOCOMMIT")
     with admin.connect() as conn:
-        conn.execute(text("DROP DATABASE IF EXISTS mockbank_test_migrations"))
-        conn.execute(text("CREATE DATABASE mockbank_test_migrations"))
+        conn.execute(text("DROP DATABASE IF EXISTS trustmebank_test_migrations"))
+        conn.execute(text("CREATE DATABASE trustmebank_test_migrations"))
     admin.dispose()
 
     cfg = Config("alembic.ini")
     cfg.set_main_option("sqlalchemy.url", url)
     previous = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = url
-    from mockbank.config import get_settings
+    from trustmebank.config import get_settings
 
     get_settings.cache_clear()
     try:

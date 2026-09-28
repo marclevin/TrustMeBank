@@ -1,7 +1,5 @@
 from datetime import timedelta
 
-from mockbank.models import Consent, Token, utcnow
-from mockbank.security import sha256
 from tests.conftest import (
     ALICE,
     authorize,
@@ -12,6 +10,8 @@ from tests.conftest import (
     login,
     query_of,
 )
+from trustmebank.models import Consent, Token, utcnow
+from trustmebank.security import sha256
 
 
 def test_unknown_client_shows_error_page_and_never_redirects(client):
@@ -160,7 +160,7 @@ def test_basic_auth_client_credentials(client, api, registered_app):
         },
         auth=(application.id, secret),
     )
-    assert r.status_code == 200 and r.json()["access_token"].startswith("mbat_")
+    assert r.status_code == 200 and r.json()["access_token"].startswith("tmbat_")
 
 
 def test_refresh_rotates_tokens(client, api, registered_app):

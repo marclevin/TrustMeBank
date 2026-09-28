@@ -1,10 +1,10 @@
-# MockBank Specification
+# TrustMeBank Specification
 
-MockBank is a simulated South African bank built for a university Financial Technology course.
-Student teams build third-party fintech applications (TPPs) that integrate with MockBank through
+TrustMeBank is a simulated South African bank built for a university Financial Technology course.
+Student teams build third-party fintech applications (TPPs) that integrate with TrustMeBank through
 an Open Banking style API: OAuth consent, account information, payment initiation and webhooks.
 
-MockBank never handles real money. Every customer, account and transaction is fake.
+TrustMeBank never handles real money. Every customer, account and transaction is fake.
 
 This document is the single source of truth for behaviour. `ARCHITECTURE.md` explains how the
 system is built and `IMPLEMENTATION_PLAN.md` explains the order in which it was built.
@@ -15,7 +15,7 @@ system is built and `IMPLEMENTATION_PLAN.md` explains the order in which it was 
 
 | Actor | Description | How they interact |
 |---|---|---|
-| **Customer** | A fake bank customer (for example `alice@example.com`) | Logs in to the MockBank web UI, views accounts, approves consents and payments |
+| **Customer** | A fake bank customer (for example `alice@example.com`) | Logs in to the TrustMeBank web UI, views accounts, approves consents and payments |
 | **TPP (third-party application)** | A student team's fintech app | Calls the JSON API with OAuth access tokens, receives webhooks |
 | **Administrator** | The course instructor | Uses the admin UI or CLI to seed data, register applications and inspect activity |
 
@@ -37,7 +37,7 @@ Out of scope (deliberately):
 - PKCE, dynamic client registration, JWTs, mutual TLS, request signing
 - Multi-currency. Every account is ZAR.
 - Standing orders, scheduled payments, card products, interest, fees
-- Payments to accounts outside MockBank. The mock world is closed.
+- Payments to accounts outside TrustMeBank. The simulated world is closed.
 - Horizontal scaling. One application process is enough for a class.
 
 ## 3. Data model
@@ -164,7 +164,7 @@ One transaction is one account's side of a journal. This is what the API exposes
 | id | primary key |
 | application_id, consent_id | who initiated it |
 | debtor_account_id | must belong to the consenting customer |
-| creditor_account_number | must be an existing MockBank account |
+| creditor_account_number | must be an existing TrustMeBank account |
 | amount, currency | |
 | reference | free text shown on both statements |
 | status | see state machine |
@@ -212,8 +212,8 @@ The seed command creates the following. Passwords are development only.
 | `bob@example.com` (Bob van der Merwe) | `bob123` | Everyday Account `1000234567` (R3,870.25) |
 | `carol@example.com` (Carol Pillay) | `carol123` | Everyday Account `1000345678` (R980.00) |
 | `remitx@example.com` (RemitX (Pty) Ltd, business) | `remitx123` | RemitX Settlement Account `1000987654` (R250,000.00) |
-| MockBank Treasury (system) | cannot log in | `1000000000`, overdraft allowed |
-| MockBank Clearing (system) | cannot log in | `1000000001`, overdraft allowed |
+| TrustMeBank Treasury (system) | cannot log in | `1000000000`, overdraft allowed |
+| TrustMeBank Clearing (system) | cannot log in | `1000000001`, overdraft allowed |
 
 Every seeded customer account has roughly 60 days of realistic history (salary credits, card
 purchases, transfers). Seed history is posted through the normal ledger, so balances always
@@ -224,9 +224,9 @@ One application is seeded for the example apps and the Swagger UI:
 | Field | Value |
 |---|---|
 | client_id | `app_remitx_demo` |
-| client_secret | `mbsk_remitx_demo_secret` |
+| client_secret | `tmbsk_remitx_demo_secret` |
 | redirect URIs | `http://localhost:5000/callback`, `http://localhost:5000/payments/return`, `http://localhost:3000/callback`, `http://localhost:3000/payments/return`, `{PUBLIC_BASE_URL}/docs/oauth2-redirect` |
-| webhook URL | `http://host.docker.internal:5000/webhooks/mockbank` |
+| webhook URL | `http://host.docker.internal:5000/webhooks/trustmebank` |
 | webhook secret | `whsec_remitx_demo_secret` |
 
 Admin login uses the `ADMIN_PASSWORD` environment variable.
@@ -246,12 +246,12 @@ Admin login uses the `ADMIN_PASSWORD` environment variable.
   3. Reject with `insufficient_funds` if the debit account's balance would go negative and
      neither `account.allow_overdraft` nor the global `ALLOW_NEGATIVE_BALANCES` setting is set.
   4. Insert the journal and two transactions, update both balances, commit.
-- A customer can transfer between MockBank accounts from the web UI. This is how students can
+- A customer can transfer between TrustMeBank accounts from the web UI. This is how students can
   simulate a manual EFT deposit to their settlement account with a reference.
 
 ## 5. OAuth lifecycle
 
-MockBank implements the OAuth 2.0 Authorization Code grant with confidential clients.
+TrustMeBank implements the OAuth 2.0 Authorization Code grant with confidential clients.
 
 ### 5.1 Scopes
 
@@ -281,9 +281,9 @@ Validation, in order:
 
 1. `client_id` must identify an active application. Otherwise an error page is shown.
 2. `redirect_uri` must exactly match one of the application's registered URIs. Otherwise an
-   error page is shown. MockBank never redirects to an unregistered URI.
+   error page is shown. TrustMeBank never redirects to an unregistered URI.
 3. `response_type` must be `code`, `scope` must be a non-empty subset of the known scopes and
-   `state` must be present. Otherwise MockBank redirects to `redirect_uri` with
+   `state` must be present. Otherwise TrustMeBank redirects to `redirect_uri` with
    `error=invalid_request` (or `invalid_scope`) and the `state` if one was supplied.
 4. If the customer is not logged in they are sent to the login page and then returned here.
 5. The consent screen lists the application name and a plain-language line per scope.
@@ -296,8 +296,8 @@ Validation, in order:
   `{redirect_uri}?code=...&state=...`.
 - **Deny**: the browser is redirected to `{redirect_uri}?error=access_denied&state=...`.
 
-`state` is required. MockBank echoes it back unchanged. The TPP must compare it with the value
-it stored before the redirect. This is the TPP's CSRF protection; MockBank cannot do it for them.
+`state` is required. TrustMeBank echoes it back unchanged. The TPP must compare it with the value
+it stored before the redirect. This is the TPP's CSRF protection; TrustMeBank cannot do it for them.
 
 ### 5.4 Token exchange
 
@@ -312,10 +312,10 @@ Client credentials may also be sent as HTTP Basic. Success:
 
 ```json
 {
-  "access_token": "mbat_...",
+  "access_token": "tmbat_...",
   "token_type": "Bearer",
   "expires_in": 3600,
-  "refresh_token": "mbrt_...",
+  "refresh_token": "tmbrt_...",
   "scope": "accounts balances transactions payments",
   "consent_id": "cns_..."
 }
@@ -333,7 +333,7 @@ Rules:
 
 ### 5.5 Using a token
 
-`Authorization: Bearer mbat_...`
+`Authorization: Bearer tmbat_...`
 
 A request is rejected with `401 invalid_token` if the token is unknown, expired or revoked,
 if the consent is revoked or expired, or if the application or customer is inactive.
@@ -453,7 +453,7 @@ Non-JSON, browser facing routes: `/oauth/authorize`, `/login`, `/logout`, `/acco
 
 ```
 POST /api/v1/payments
-Authorization: Bearer mbat_...
+Authorization: Bearer tmbat_...
 Idempotency-Key: 4c2e1a7b-...      (optional but recommended)
 
 {
@@ -470,7 +470,7 @@ Validation:
 
 - `debtor_account_id` must be an active account owned by the consenting customer (404 otherwise,
   so the API does not reveal other customers' account ids).
-- `creditor_account_number` must be an existing active MockBank account and must differ from the
+- `creditor_account_number` must be an existing active TrustMeBank account and must differ from the
   debtor account (422 `invalid_creditor`).
 - `amount` must be a string, positive, at most two decimals, at most 1,000,000.00.
 - `currency` must be `ZAR`.
@@ -529,7 +529,7 @@ Settlement is atomic and idempotent:
    constraint is a second line of defence against double settlement.
 
 Only settlement moves money. There is no API that debits an account without a customer
-clicking Approve on MockBank's own site.
+clicking Approve on TrustMeBank's own site.
 
 ## 9. Webhooks
 
@@ -556,7 +556,7 @@ Envelope:
 ### 9.2 Delivery
 
 - `POST {webhook_url}` with `Content-Type: application/json`, timeout 10 seconds.
-- Headers: `X-MockBank-Event`, `X-MockBank-Delivery-Id`, `X-MockBank-Signature`.
+- Headers: `X-TrustMeBank-Event`, `X-TrustMeBank-Delivery-Id`, `X-TrustMeBank-Signature`.
 - Any 2xx response marks the delivery `delivered`. Anything else, or a network error, schedules a
   retry after 30s, 2m, 10m, 30m and 1h. After 6 failed attempts the delivery is `failed` and the
   administrator can retry it manually.
@@ -567,7 +567,7 @@ Envelope:
 ### 9.3 Signature
 
 ```
-X-MockBank-Signature: t=1727517601,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8c2
+X-TrustMeBank-Signature: t=1727517601,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8c2
 ```
 
 `v1 = HMAC_SHA256(key = webhook_secret, message = f"{t}.{raw_request_body}")` in lowercase hex.
@@ -583,7 +583,7 @@ Customer pages (session cookie, login required):
 | `/login`, `/logout` | Email and password login |
 | `/accounts` | Accounts and balances |
 | `/accounts/{id}` | Transaction history |
-| `/transfer` | Transfer to any MockBank account number with a reference |
+| `/transfer` | Transfer to any TrustMeBank account number with a reference |
 | `/connected-apps` | Active consents with a Revoke button |
 | `/oauth/authorize` | Consent screen |
 | `/payments/{id}/authorise` | Payment approval screen |
@@ -608,7 +608,7 @@ Reset options:
   balance.
 - **Full reset**: drops all data and re-runs the seed.
 
-CLI equivalents: `mockbank seed`, `mockbank reset-activity`, `mockbank reset --yes`.
+CLI equivalents: `tmb seed`, `tmb reset-activity`, `tmb reset --yes`.
 
 ## 11. Error format
 
@@ -641,7 +641,7 @@ Browser routes render HTML error pages.
 ## 12. Security assumptions and rules
 
 - Passwords are hashed with bcrypt. Client secrets, authorization codes and tokens are stored
-  as SHA-256 hashes. Webhook secrets must be stored in plaintext because MockBank signs with them.
+  as SHA-256 hashes. Webhook secrets must be stored in plaintext because TrustMeBank signs with them.
 - Authorization codes: 5 minutes, single use, bound to the client and redirect URI.
 - Access tokens: 1 hour. Refresh tokens: 30 days, rotated on use.
 - Redirect URIs: exact string match against the registered list, for OAuth and for payments.
@@ -666,7 +666,7 @@ Browser routes render HTML error pages.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg://mockbank:mockbank@db:5432/mockbank` | |
+| `DATABASE_URL` | `postgresql+psycopg://trustmebank:trustmebank@db:5432/trustmebank` | |
 | `SECRET_KEY` | required | Signs session cookies |
 | `ADMIN_PASSWORD` | required | Admin UI login |
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | Used to build `authorisation_url` and docs |

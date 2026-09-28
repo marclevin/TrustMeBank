@@ -5,7 +5,7 @@ import re
 from urllib.parse import parse_qs, urlparse
 
 os.environ.setdefault(
-    "TEST_DATABASE_URL", "postgresql+psycopg://mockbank:mockbank@localhost:5432/mockbank_test"
+    "TEST_DATABASE_URL", "postgresql+psycopg://trustmebank:trustmebank@localhost:5432/trustmebank_test"
 )
 os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
 os.environ["WEBHOOK_WORKER_ENABLED"] = "false"
@@ -22,13 +22,13 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
-from mockbank.config import get_settings  # noqa: E402
-from mockbank.db import Base, get_engine, new_session  # noqa: E402
-from mockbank.main import app  # noqa: E402
-from mockbank.models import Account, Application, Customer  # noqa: E402
-from mockbank.services import admin as admin_service  # noqa: E402
-from mockbank.services import seed as seed_service  # noqa: E402
-from mockbank.services.oauth import build_redirect  # noqa: E402
+from trustmebank.config import get_settings  # noqa: E402
+from trustmebank.db import Base, get_engine, new_session  # noqa: E402
+from trustmebank.main import app  # noqa: E402
+from trustmebank.models import Account, Application, Customer  # noqa: E402
+from trustmebank.services import admin as admin_service  # noqa: E402
+from trustmebank.services import seed as seed_service  # noqa: E402
+from trustmebank.services.oauth import build_redirect  # noqa: E402
 
 ALICE = ("alice@example.com", "alice123")
 BOB = ("bob@example.com", "bob123")
@@ -101,7 +101,7 @@ def registered_app(db):
         name="Test App",
         owner_label="pytest",
         redirect_uris=["http://localhost:5000/callback", "http://localhost:5000/payments/return"],
-        webhook_url="http://tpp.test/webhooks/mockbank",
+        webhook_url="http://tpp.test/webhooks/trustmebank",
     )
     db.commit()
     db.refresh(result.application)

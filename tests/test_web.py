@@ -21,7 +21,7 @@ def test_system_customers_cannot_log_in(client):
     page = client.get("/login")
     r = client.post(
         "/login",
-        data={"email": "treasury@mockbank.internal", "password": "anything", "csrf": csrf_from(page.text)},
+        data={"email": "treasury@trustmebank.internal", "password": "anything", "csrf": csrf_from(page.text)},
     )
     assert r.status_code == 401
 

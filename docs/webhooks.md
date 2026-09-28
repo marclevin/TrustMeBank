@@ -1,8 +1,8 @@
 # Webhooks
 
-MockBank POSTs a JSON event to your webhook URL when something happens that your application
+TrustMeBank POSTs a JSON event to your webhook URL when something happens that your application
 cares about. Events are signed with your `webhook_secret` so you can prove they came from
-MockBank and were not tampered with.
+TrustMeBank and were not tampered with.
 
 ## Events
 
@@ -16,17 +16,17 @@ MockBank and were not tampered with.
 ## The request
 
 ```
-POST https://your-app.example/webhooks/mockbank
+POST https://your-app.example/webhooks/trustmebank
 Content-Type: application/json
-User-Agent: MockBank-Webhooks/1.0
-X-MockBank-Event: payment.completed
-X-MockBank-Delivery-Id: evt_5h4g3f2d1s
-X-MockBank-Signature: t=1727517601,v1=054e4eb8d78fc0d053363ec4cd6b016ebd24a4ae6a1984a18c41bf9544ddc6fd
+User-Agent: TrustMeBank-Webhooks/1.0
+X-TrustMeBank-Event: payment.completed
+X-TrustMeBank-Delivery-Id: evt_5h4g3f2d1s
+X-TrustMeBank-Signature: t=1727517601,v1=054e4eb8d78fc0d053363ec4cd6b016ebd24a4ae6a1984a18c41bf9544ddc6fd
 
 {"id":"evt_5h4g3f2d1s","event":"payment.completed","created_at":"2026-09-28T10:00:01Z","data":{"payment_id":"pay_abc","amount":"500.00","currency":"ZAR","reference":"REM-92831"}}
 ```
 
-The signature above is real: it is what MockBank produces for exactly that body with the demo
+The signature above is real: it is what TrustMeBank produces for exactly that body with the demo
 secret `whsec_remitx_demo_secret` and timestamp `1727517601`. Use it to test your verifier
 (disable the timestamp check while testing, since that timestamp is in the past).
 
@@ -71,9 +71,9 @@ def verify(body: bytes, header: str, tolerance: int = 300) -> bool:
     expected = hmac.new(WEBHOOK_SECRET.encode(), f"{t}.".encode() + body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, v1)
 
-@app.post("/webhooks/mockbank")
+@app.post("/webhooks/trustmebank")
 def webhook():
-    if not verify(request.get_data(), request.headers.get("X-MockBank-Signature", "")):
+    if not verify(request.get_data(), request.headers.get("X-TrustMeBank-Signature", "")):
         abort(400)
     event = request.get_json()
     if already_processed(event["id"]):          # idempotency: deliveries can repeat
@@ -103,8 +103,8 @@ function verify(rawBody, header, tolerance = 300) {
 }
 
 // express.raw keeps the exact bytes; express.json would re-serialise them.
-app.post("/webhooks/mockbank", express.raw({ type: "application/json" }), (req, res) => {
-  if (!verify(req.body, req.get("X-MockBank-Signature") || "")) return res.sendStatus(400);
+app.post("/webhooks/trustmebank", express.raw({ type: "application/json" }), (req, res) => {
+  if (!verify(req.body, req.get("X-TrustMeBank-Signature") || "")) return res.sendStatus(400);
   const event = JSON.parse(req.body.toString("utf8"));
   // de-duplicate on event.id, then act on event.event
   res.sendStatus(200);
@@ -146,12 +146,12 @@ this rarely matters in practice.
 
 ## Local development
 
-MockBank must be able to reach your URL.
+TrustMeBank must be able to reach your URL.
 
-- MockBank in Docker on your laptop, your app on the same laptop: register
-  `http://host.docker.internal:5000/webhooks/mockbank` (any port you use). The compose file
+- TrustMeBank in Docker on your laptop, your app on the same laptop: register
+  `http://host.docker.internal:5000/webhooks/trustmebank` (any port you use). The compose file
   maps that hostname to your machine.
-- MockBank on a shared server, your app on your laptop: expose your app with a tunnel such as
+- TrustMeBank on a shared server, your app on your laptop: expose your app with a tunnel such as
   `ngrok http 5000` or `cloudflared tunnel --url http://localhost:5000`, and ask the instructor
   to set the tunnel URL as your webhook URL. Tunnel URLs change, so consider a paid static
   domain or deploy your app somewhere public.

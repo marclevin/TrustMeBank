@@ -1,12 +1,12 @@
 # Payments
 
-MockBank does not let an application debit an account. It lets an application **ask**, and the
-customer decides on MockBank's own website. This is payment initiation.
+TrustMeBank does not let an application debit an account. It lets an application **ask**, and the
+customer decides on TrustMeBank's own website. This is payment initiation.
 
 ## The flow
 
 ```
-Your app                         MockBank                          Customer's browser
+Your app                         TrustMeBank                          Customer's browser
    │ POST /api/v1/payments ──────▶│ create AWAITING_AUTHORISATION      │
    │◀── 201 {authorisation_url} ──│                                    │
    │ 302 → authorisation_url ─────────────────────────────────────────▶│
@@ -23,7 +23,7 @@ Your app                         MockBank                          Customer's br
 
 ```
 POST /api/v1/payments
-Authorization: Bearer mbat_...
+Authorization: Bearer tmbat_...
 Idempotency-Key: 6d9a7d1e-1a2b-4c3d-9e8f-0a1b2c3d4e5f
 Content-Type: application/json
 
@@ -40,11 +40,11 @@ Content-Type: application/json
 | Field | Rules |
 |---|---|
 | `debtor_account_id` | One of the consenting customer's accounts (from `GET /api/v1/accounts`) |
-| `creditor_account_number` | A 10 digit MockBank account number. Usually your settlement account |
+| `creditor_account_number` | A 10 digit TrustMeBank account number. Usually your settlement account |
 | `amount` | A **string** with up to two decimals, greater than zero, at most `1000000.00`. Floats are rejected |
 | `currency` | `ZAR` |
 | `reference` | 1 to 35 characters. Appears on both statements. Make it unique per payment so you can reconcile |
-| `redirect_uri` | Optional. Where MockBank sends the customer afterwards. Must be a registered redirect URI |
+| `redirect_uri` | Optional. Where TrustMeBank sends the customer afterwards. Must be a registered redirect URI |
 
 Response `201 Created`:
 
@@ -76,7 +76,7 @@ Networks fail. If you POST a payment and the response is lost, you do not know w
 created. Send an `Idempotency-Key` header (any unique string, a UUID is ideal) and retry with
 the same key and body:
 
-- Same key, same body: MockBank returns the original payment with status `200` and the header
+- Same key, same body: TrustMeBank returns the original payment with status `200` and the header
   `Idempotent-Replayed: true`.
 - Same key, different body: `409 idempotency_key_reused`.
 
@@ -122,7 +122,7 @@ with `status=PROCESSING`. Your code must cope with that: the redirect is not con
 
 ## 4. The customer comes back
 
-After the decision MockBank redirects to
+After the decision TrustMeBank redirects to
 `{redirect_uri}?payment_id=pay_...&status=COMPLETED` (or `PROCESSING`, `REJECTED`, `FAILED`).
 
 Treat these query parameters as a hint for the UI only. Anyone can type that URL. Confirm the
@@ -137,13 +137,13 @@ both: the webhook for speed, a periodic poll of non-final payments for safety.
 
 ## The settlement account pattern
 
-Every team has a MockBank business customer with a settlement account. This is the pattern for
+Every team has a TrustMeBank business customer with a settlement account. This is the pattern for
 a "deposit" into your platform:
 
-1. Your user (a MockBank customer such as Alice) clicks "Deposit R500" in your app.
+1. Your user (a TrustMeBank customer such as Alice) clicks "Deposit R500" in your app.
 2. Your app creates a payment from Alice's account to your settlement account with a unique
    reference such as `DEP-000123`, and redirects Alice to the authorisation URL.
-3. Alice approves. MockBank debits Alice, credits your settlement account, and records both
+3. Alice approves. TrustMeBank debits Alice, credits your settlement account, and records both
    sides in its ledger under one `journal_id`.
 4. Your webhook receives `payment.completed`. You verify the signature, check you have not
    processed this event id before, find your deposit record by `payment_id` (or `reference`),
@@ -152,7 +152,7 @@ a "deposit" into your platform:
    platform mints tokens for that balance, that is a third, separate ledger.
 
 Withdrawals in the other direction are outside the API on purpose: an application cannot move
-money out of its settlement account without a customer approving on MockBank. For the course,
+money out of its settlement account without a customer approving on TrustMeBank. For the course,
 simulate a withdrawal by logging in as your business customer and using the **Transfer** page,
 or ask your instructor how they would like it handled.
 
@@ -166,7 +166,7 @@ Reconciliation means proving that your internal ledger agrees with the bank's le
 - With a consent for your business customer (`transactions` scope), pull
   `GET /api/v1/accounts/{settlement_account_id}/transactions` and match each credit by
   `payment_id` or `reference`. Anything you cannot match is an exception to investigate.
-- Customers can also transfer money to your settlement account manually from the MockBank
+- Customers can also transfer money to your settlement account manually from the TrustMeBank
   **Transfer** page, with any reference they like. That is a real-world "EFT deposit". No
   `payment_id` exists for it; you can only match on `reference` and amount. This is what
   reference matching in fintech is about, and it is why references should be unique and

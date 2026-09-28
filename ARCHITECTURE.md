@@ -1,16 +1,16 @@
-# MockBank Architecture
+# TrustMeBank Architecture
 
-This document explains how MockBank is built and why. Read `SPEC.md` first for what it does.
+This document explains how TrustMeBank is built and why. Read `SPEC.md` first for what it does.
 
 ## 1. The lifecycle we are teaching
 
 ```
-Student App ──(1) redirect──▶ MockBank /oauth/authorize ──(2) consent──▶ redirect back with code
+Student App ──(1) redirect──▶ TrustMeBank /oauth/authorize ──(2) consent──▶ redirect back with code
 Student App ──(3) POST /oauth/token──▶ access token
 Student App ──(4) GET /api/v1/accounts──▶ accounts
 Student App ──(5) POST /api/v1/payments──▶ AWAITING_AUTHORISATION + authorisation_url
-Student App ──(6) redirect customer──▶ MockBank /payments/{id}/authorise ──(7) Approve──▶ ledger
-MockBank ──(8) POST webhook payment.completed (HMAC signed)──▶ Student App
+Student App ──(6) redirect customer──▶ TrustMeBank /payments/{id}/authorise ──(7) Approve──▶ ledger
+TrustMeBank ──(8) POST webhook payment.completed (HMAC signed)──▶ Student App
 Student App ──(9) verify signature, GET /api/v1/payments/{id}, credit internal balance
 ```
 
@@ -39,7 +39,7 @@ codebase. A class of 100 students generates a few requests per second at most.
 ## 3. Code layout
 
 ```
-mockbank/
+trustmebank/
   main.py            app factory, middleware, router registration, lifespan (starts the worker)
   config.py          Settings loaded from environment variables
   db.py              engine, SessionLocal, Base
@@ -120,7 +120,7 @@ loop every 2 seconds:
 - Deliveries are inserted in the same transaction as the ledger change that caused them. The
   database is the queue. If the process dies mid-delivery the row is still `pending` and is
   retried.
-- `SKIP LOCKED` means a second app process (or the `mockbank run-worker` CLI) can safely run
+- `SKIP LOCKED` means a second app process (or the `tmb run-worker` CLI) can safely run
   the same loop. We do not need that for a class, but it costs nothing.
 - Tests disable the thread and call `worker.run_once()` with an `httpx.Client` whose transport
   is a mock, so the whole lifecycle including signature verification runs in one test.
@@ -145,12 +145,12 @@ docker compose up
 
 - One uvicorn process (`--workers 1`). The in-process worker and rate limiter assume this.
   If more throughput were ever needed, run a second `app` replica with
-  `WEBHOOK_WORKER_ENABLED=false` and start `mockbank run-worker` once.
+  `WEBHOOK_WORKER_ENABLED=false` and start `tmb run-worker` once.
 - `extra_hosts: host.docker.internal:host-gateway` so a webhook URL of
   `http://host.docker.internal:5000/...` reaches a student app on the instructor's machine.
 - Put a TLS terminating reverse proxy (Caddy, nginx, a cloud load balancer) in front and set
   `PUBLIC_BASE_URL` and `SESSION_COOKIE_SECURE=true`.
-- Backups: `docker compose exec db pg_dump -U mockbank mockbank > backup.sql`.
+- Backups: `docker compose exec db pg_dump -U trustmebank trustmebank > backup.sql`.
 
 ## 9. Testing strategy
 
@@ -171,7 +171,7 @@ docker compose up
 | Cursor pagination on an integer `seq` | Offset pagination | Stable under inserts, and the cursor is still trivial to implement |
 | One thread as worker | Celery, RQ, a separate container | Nothing to deploy or monitor. The outbox table is the queue |
 | Admin registers applications | Developer self-service portal | The instructor wants control over who is registered. An "onboard team" form keeps it to one click per team |
-| Payments only to MockBank account numbers | External beneficiaries | Keeps the ledger closed and balanced, and makes the settlement account scenario possible |
+| Payments only to TrustMeBank account numbers | External beneficiaries | Keeps the ledger closed and balanced, and makes the settlement account scenario possible |
 | `PROCESSING` state with optional delay | Synchronous only | Lets the instructor make students handle asynchronous settlement without a different code path |
 | Consent replaced on re-authorisation | Merged scopes | Simple mental model: the latest consent screen is the truth |
 | Session cookies for the bank UI | Separate auth for admin | One mechanism, one middleware. The admin flag lives in the same session |
