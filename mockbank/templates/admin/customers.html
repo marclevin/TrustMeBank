@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<h1>Customers</h1>
+<table>
+  <tr><th>Name</th><th>Email</th><th>Kind</th><th>Accounts</th><th>Status</th></tr>
+  {% for c in customers %}
+  <tr>
+    <td><a href="/admin/customers/{{ c.id }}">{{ c.full_name }}</a></td>
+    <td>{{ c.email }}</td>
+    <td>{{ c.kind }}</td>
+    <td class="small">{% for a in c.accounts %}{{ a.account_number }} ({{ a.balance|rand }})<br>{% endfor %}</td>
+    <td>{% if c.is_active %}<span class="badge ok">active</span>{% else %}<span class="badge bad">inactive</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Create a customer</h2>
+<div class="card">
+  <form method="post" action="/admin/customers">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="two-col">
+      <div>
+        <label>Full name</label><input type="text" name="full_name" required>
+        <label>Email (login)</label><input type="email" name="email" required>
+        <label>Password</label><input type="text" name="password" required>
+        <label>Kind</label>
+        <select name="kind"><option value="personal">Personal</option><option value="business">Business</option></select>
+      </div>
+      <div>
+        <label>First account name</label><input type="text" name="account_name" value="Everyday Account">
+        <div class="help">Leave blank to create the customer without an account.</div>
+        <label>Opening balance (ZAR)</label><input type="text" name="opening_balance" value="5000.00">
+        <label>Transaction history</label>
+        <select name="history">
+          <option value="personal">Personal (salary and card purchases)</option>
+          <option value="savings">Savings (weekly deposits)</option>
+          <option value="business">Business (customer deposits)</option>
+          <option value="none">None (single opening deposit)</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions"><button class="btn" type="submit">Create customer</button></div>
+  </form>
+</div>
+{% endblock %}

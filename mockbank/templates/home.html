@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}MockBank{% endblock %}
+{% block content %}
+<div class="two-col">
+  <div class="card">
+    <h1>Welcome to MockBank</h1>
+    <p class="lead">A simulated South African bank for the Financial Technology course.</p>
+    <p>Customers log in to view accounts, approve third-party access and authorise payments.
+       Student applications integrate through an Open Banking style API.</p>
+    <div class="actions">
+      <a class="btn" href="/login">Log in as a customer</a>
+      <a class="btn secondary" href="/guide/getting-started">Developer guide</a>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Development logins</h2>
+    <table>
+      <tr><th>Email</th><th>Password</th></tr>
+      <tr><td>alice@example.com</td><td><code>alice123</code></td></tr>
+      <tr><td>bob@example.com</td><td><code>bob123</code></td></tr>
+      <tr><td>carol@example.com</td><td><code>carol123</code></td></tr>
+      <tr><td>remitx@example.com</td><td><code>remitx123</code></td></tr>
+    </table>
+    <p class="small muted">These are seeded test customers. The administrator can add more at <a href="/admin">/admin</a>.</p>
+  </div>
+</div>
+{% endblock %}

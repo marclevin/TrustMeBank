@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block bodyclass %}admin{% endblock %}
+{% block nav %}
+<a href="/admin" class="{% if request.url.path == '/admin' %}active{% endif %}">Dashboard</a>
+<a href="/admin/customers" class="{% if request.url.path.startswith('/admin/customers') %}active{% endif %}">Customers</a>
+<a href="/admin/applications" class="{% if request.url.path.startswith('/admin/applications') %}active{% endif %}">Applications</a>
+<a href="/admin/consents" class="{% if request.url.path.startswith('/admin/consents') %}active{% endif %}">Consents</a>
+<a href="/admin/payments" class="{% if request.url.path.startswith('/admin/payments') %}active{% endif %}">Payments</a>
+<a href="/admin/webhooks" class="{% if request.url.path.startswith('/admin/webhooks') %}active{% endif %}">Webhooks</a>
+<a href="/admin/audit" class="{% if request.url.path.startswith('/admin/audit') %}active{% endif %}">Audit log</a>
+{% endblock %}
+{% block user %}
+<span>Administrator</span>
+{% if is_admin %}<form method="post" action="/admin/logout"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small secondary" type="submit">Log out</button></form>{% endif %}
+{% endblock %}

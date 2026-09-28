@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ c.full_name }}{% endblock %}
+{% block content %}
+<p><a href="/admin/customers">&larr; Customers</a></p>
+<h1>{{ c.full_name }} {% if not c.is_active %}<span class="badge bad">inactive</span>{% endif %}</h1>
+<dl class="kv">
+  <dt>Customer id</dt><dd><code>{{ c.id }}</code></dd>
+  <dt>Email</dt><dd>{{ c.email }}</dd>
+  <dt>Kind</dt><dd>{{ c.kind }}</dd>
+  <dt>Created</dt><dd>{{ c.created_at|dt }}</dd>
+</dl>
+
+<h2>Accounts</h2>
+<table>
+  <tr><th>Name</th><th>Number</th><th>Id</th><th>Type</th><th class="num">Balance</th><th>Actions</th></tr>
+  {% for a in c.accounts %}
+  <tr>
+    <td>{{ a.name }}</td><td>{{ a.account_number }}</td><td><code>{{ a.id }}</code></td><td>{{ a.account_type }}{% if a.allow_overdraft %} (overdraft){% endif %}</td>
+    <td class="num">{{ a.balance|rand }}</td>
+    <td>
+      <form method="post" action="/admin/accounts/{{ a.id }}/top-up" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <input type="text" name="amount" placeholder="1000.00" style="width:110px;display:inline-block">
+        <button class="btn small" type="submit">Top up</button>
+      </form>
+      {% if a.balance == 0 %}
+      <form method="post" action="/admin/accounts/{{ a.id }}/seed-history" class="inline" style="margin-top:6px;display:block">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <select name="style" style="width:auto;display:inline-block"><option value="personal">personal</option><option value="savings">savings</option><option value="business">business</option></select>
+        <input type="text" name="target" placeholder="ending balance" style="width:130px;display:inline-block">
+        <button class="btn small secondary" type="submit">Seed history</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="two-col" style="margin-top:18px">
+  <div class="card">
+    <h3 style="margin-top:0">Add an account</h3>
+    <form method="post" action="/admin/customers/{{ c.id }}/accounts">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <label>Name</label><input type="text" name="name" value="Savings Account" required>
+      <label>Type</label>
+      <select name="account_type"><option value="current">current</option><option value="savings">savings</option><option value="business">business</option></select>
+      <label>Opening balance</label><input type="text" name="opening_balance" value="0.00">
+      <label>History</label>
+      <select name="history"><option value="none">None</option><option value="personal">Personal</option><option value="savings">Savings</option><option value="business">Business</option></select>
+      <div class="actions"><button class="btn" type="submit">Add account</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Reset password</h3>
+    <form method="post" action="/admin/customers/{{ c.id }}/password">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <label>New password</label><input type="text" name="password" required>
+      <div class="actions"><button class="btn" type="submit">Set password</button></div>
+    </form>
+    {% if c.kind != 'system' %}
+    <h3>Status</h3>
+    <form method="post" action="/admin/customers/{{ c.id }}/toggle-active">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <button class="btn secondary" type="submit">{% if c.is_active %}Deactivate customer{% else %}Reactivate customer{% endif %}</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<h2>Consents</h2>
+{% if consents %}
+<table>
+  <tr><th>Application</th><th>Scopes</th><th>Status</th><th>Granted</th><th></th></tr>
+  {% for k in consents %}
+  <tr><td><a href="/admin/applications/{{ k.application_id }}">{{ k.application.name }}</a></td><td class="small">{{ k.scopes|join(' ') }}</td>
+      <td><span class="badge {{ k.status }}">{{ k.status }}</span></td><td class="small">{{ k.created_at|dt }}</td>
+      <td>{% if k.status == 'active' %}<form method="post" action="/admin/consents/{{ k.id }}/revoke"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small danger">Revoke</button></form>{% endif %}</td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">None.</p>{% endif %}
+{% endblock %}

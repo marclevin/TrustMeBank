@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ app.name }}{% endblock %}
+{% block content %}
+<p><a href="/admin/applications">&larr; Applications</a></p>
+<h1>{{ app.name }} {% if not app.is_active %}<span class="badge bad">inactive</span>{% endif %}</h1>
+{% if new_secret %}<div class="flash success">{{ new_secret.label }}: <div class="secret">{{ new_secret.value }}</div> Copy it now, it will not be shown again.</div>{% endif %}
+<div class="two-col">
+  <div class="card">
+    <h3 style="margin-top:0">Credentials</h3>
+    <dl class="kv">
+      <dt>client_id</dt><dd><code>{{ app.id }}</code></dd>
+      <dt>client_secret</dt><dd><span class="muted">hashed</span>
+        <form method="post" action="/admin/applications/{{ app.id }}/regenerate-secret" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small secondary">Regenerate</button></form></dd>
+      <dt>webhook_secret</dt><dd><code>{{ app.webhook_secret }}</code>
+        <form method="post" action="/admin/applications/{{ app.id }}/rotate-webhook-secret" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small secondary">Rotate</button></form></dd>
+      <dt>Created</dt><dd>{{ app.created_at|dt }}</dd>
+    </dl>
+    <form method="post" action="/admin/applications/{{ app.id }}/toggle-active">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <button class="btn secondary small">{% if app.is_active %}Deactivate application{% else %}Reactivate application{% endif %}</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Settings</h3>
+    <form method="post" action="/admin/applications/{{ app.id }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <label>Name</label><input type="text" name="name" value="{{ app.name }}" required>
+      <label>Owner / team</label><input type="text" name="owner_label" value="{{ app.owner_label }}">
+      <label>Redirect URIs (one per line)</label><textarea name="redirect_uris" required>{{ app.redirect_uris|join('\n') }}</textarea>
+      <label>Webhook URL</label><input type="url" name="webhook_url" value="{{ app.webhook_url or '' }}">
+      <label><input type="checkbox" name="send_transaction_events" value="1" {% if app.send_transaction_events %}checked{% endif %}> Send <code>transaction.created</code> events</label>
+      <div class="actions"><button class="btn" type="submit">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<h2>Consents</h2>
+{% if consents %}
+<table><tr><th>Customer</th><th>Scopes</th><th>Status</th><th>Granted</th><th></th></tr>
+{% for k in consents %}<tr><td><a href="/admin/customers/{{ k.customer_id }}">{{ k.customer.full_name }}</a></td><td class="small">{{ k.scopes|join(' ') }}</td><td><span class="badge {{ k.status }}">{{ k.status }}</span></td><td class="small">{{ k.created_at|dt }}</td>
+<td>{% if k.status == 'active' %}<form method="post" action="/admin/consents/{{ k.id }}/revoke"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small danger">Revoke</button></form>{% endif %}</td></tr>{% endfor %}
+</table>{% else %}<p class="muted">None.</p>{% endif %}
+
+<h2>Recent payments</h2>
+{% if payments %}
+<table><tr><th>Payment</th><th>Status</th><th class="num">Amount</th><th>Reference</th><th>Created</th></tr>
+{% for p in payments %}<tr><td><a href="/admin/payments/{{ p.id }}">{{ p.id }}</a></td><td><span class="badge {{ p.status }}">{{ p.status }}</span></td><td class="num">{{ p.amount|rand }}</td><td>{{ p.reference }}</td><td class="small">{{ p.created_at|dt }}</td></tr>{% endfor %}
+</table>{% else %}<p class="muted">None.</p>{% endif %}
+
+<h2>Recent webhook deliveries</h2>
+{% if deliveries %}
+<table><tr><th>Delivery</th><th>Event</th><th>Status</th><th>Attempts</th><th>Last result</th></tr>
+{% for d in deliveries %}<tr><td><a href="/admin/webhooks/{{ d.id }}">{{ d.id }}</a></td><td>{{ d.event_type }}</td><td><span class="badge {{ d.status }}">{{ d.status }}</span></td><td>{{ d.attempts }}</td><td class="small">{{ d.last_status_code or '' }} {{ d.last_error or '' }}</td></tr>{% endfor %}
+</table>{% else %}<p class="muted">None.</p>{% endif %}
+{% endblock %}

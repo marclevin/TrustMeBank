@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Authorise {{ req.application.name }}{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="card consent-box">
+  <h1>{{ req.application.name }} is requesting permission to:</h1>
+  <ul>
+    {% for s in req.scopes %}<li>{{ scope_labels[s] }}</li>{% endfor %}
+  </ul>
+  <p class="small muted">Logged in as <strong>{{ customer.full_name }}</strong> ({{ customer.email }}).
+     Access lasts 90 days and can be revoked at any time under Connected apps.
+     If you approve, MockBank will send you back to <code>{{ req.redirect_uri }}</code>.</p>
+  <form method="post" action="/oauth/authorize">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="client_id" value="{{ params.client_id }}">
+    <input type="hidden" name="redirect_uri" value="{{ params.redirect_uri }}">
+    <input type="hidden" name="response_type" value="{{ params.response_type }}">
+    <input type="hidden" name="scope" value="{{ params.scope }}">
+    <input type="hidden" name="state" value="{{ params.state }}">
+    <div class="actions">
+      <button class="btn" type="submit" name="decision" value="approve">Approve</button>
+      <button class="btn secondary" type="submit" name="decision" value="deny">Reject</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

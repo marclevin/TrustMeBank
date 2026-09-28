@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% block title %}Webhook deliveries{% endblock %}
+{% block content %}
+<h1>Webhook deliveries</h1>
+<p class="small">Filter: <a href="/admin/webhooks">all</a>{% for s in ['pending','delivered','failed'] %} &middot; <a href="/admin/webhooks?status={{ s }}" {% if status == s %}style="font-weight:700"{% endif %}>{{ s }}</a>{% endfor %}</p>
+<table>
+  <tr><th>Delivery</th><th>Application</th><th>Event</th><th>Status</th><th>Attempts</th><th>Next attempt</th><th>Last result</th></tr>
+  {% for d in deliveries %}
+  <tr>
+    <td><a href="/admin/webhooks/{{ d.id }}">{{ d.id }}</a></td>
+    <td class="small">{{ d.application.name }}</td>
+    <td>{{ d.event_type }}</td>
+    <td><span class="badge {{ d.status }}">{{ d.status }}</span></td>
+    <td>{{ d.attempts }}</td>
+    <td class="small">{% if d.status == 'pending' %}{{ d.next_attempt_at|dt }}{% endif %}</td>
+    <td class="small">{{ d.last_status_code or '' }} {{ d.last_error or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

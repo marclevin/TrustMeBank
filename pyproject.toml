@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mockbank"
+version = "1.0.0"
+description = "A simulated Open Banking style bank for a university Financial Technology course"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "sqlalchemy>=2.0,<3",
+    "alembic>=1.13,<2",
+    "psycopg[binary]>=3.1,<4",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+    "jinja2>=3.1,<4",
+    "python-multipart>=0.0.9",
+    "itsdangerous>=2.2,<3",
+    "bcrypt>=4.1,<5",
+    "httpx>=0.27,<1",
+    "markdown>=3.6,<4",
+    "typer>=0.12,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+mockbank = "mockbank.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["mockbank*"]
+
+[tool.setuptools.package-data]
+mockbank = ["templates/**/*.html", "static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]

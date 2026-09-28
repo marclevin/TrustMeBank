@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<h1>Payments</h1>
+<p class="small">Filter:
+  <a href="/admin/payments">all</a>
+  {% for s in ['AWAITING_AUTHORISATION','PROCESSING','COMPLETED','REJECTED','FAILED'] %} &middot; <a href="/admin/payments?status={{ s }}" {% if status == s %}style="font-weight:700"{% endif %}>{{ s }}</a>{% endfor %}
+</p>
+<table>
+  <tr><th>Payment</th><th>Application</th><th>From</th><th>To</th><th class="num">Amount</th><th>Reference</th><th>Status</th><th>Created</th></tr>
+  {% for p in payments %}
+  <tr>
+    <td><a href="/admin/payments/{{ p.id }}">{{ p.id }}</a></td>
+    <td class="small">{{ p.application.name }}</td>
+    <td class="small">{{ p.debtor_account.account_number }}<br>{{ p.debtor_account.customer.full_name }}</td>
+    <td class="small">{{ p.creditor_account_number }}<br>{{ p.creditor_name }}</td>
+    <td class="num">{{ p.amount|rand }}</td>
+    <td class="small">{{ p.reference }}</td>
+    <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+    <td class="small">{{ p.created_at|dt }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

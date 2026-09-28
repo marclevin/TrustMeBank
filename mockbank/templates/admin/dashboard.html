@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="grid">
+  <div class="stat"><div class="label">Customers</div><div class="value">{{ stats.customers }}</div></div>
+  <div class="stat"><div class="label">Accounts</div><div class="value">{{ stats.accounts }}</div></div>
+  <div class="stat"><div class="label">Applications</div><div class="value">{{ stats.applications }}</div></div>
+  <div class="stat"><div class="label">Active consents</div><div class="value">{{ stats.consents }}</div></div>
+  <div class="stat"><div class="label">Payments (awaiting)</div><div class="value">{{ stats.payments }} <span class="muted small">({{ stats.payments_pending }})</span></div></div>
+  <div class="stat"><div class="label">Ledger journals</div><div class="value">{{ stats.journals }}</div></div>
+  <div class="stat"><div class="label">Webhooks pending / failed</div><div class="value">{{ stats.webhooks_pending }} / {{ stats.webhooks_failed }}</div></div>
+</div>
+
+<h2>Ledger integrity</h2>
+<div class="card tight">
+  {% if integrity.ok %}
+  <span class="badge ok">OK</span> {{ integrity.accounts_checked }} account balances match their transactions and all {{ integrity.journals_checked }} journals balance to zero.
+  {% else %}
+  <span class="badge bad">PROBLEM</span>
+  {% for m in integrity.balance_mismatches %}<div>Account {{ m.account_id }}: cached {{ m.cached }}, sum {{ m.sum }}</div>{% endfor %}
+  {% for j in integrity.unbalanced_journals %}<div>Journal {{ j.journal_id }} sums to {{ j.sum }}</div>{% endfor %}
+  {% endif %}
+</div>
+
+<h2>Reset the environment</h2>
+<div class="two-col">
+  <div class="card">
+    <h3 style="margin-top:0">Reset activity</h3>
+    <p class="small">Deletes payments, consents, tokens, webhook deliveries, the ledger and the audit log.
+       Keeps customers, accounts and applications. Seeded customers get their history and balances back; other accounts go to zero.</p>
+    <form method="post" action="/admin/reset">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="mode" value="activity">
+      <label>Type RESET to confirm</label><input type="text" name="confirm" autocomplete="off">
+      <div class="actions"><button class="btn danger" type="submit">Reset activity</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Full reset</h3>
+    <p class="small">Deletes everything, including registered applications and customers you created, then re-runs the seed.</p>
+    <form method="post" action="/admin/reset">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="mode" value="full">
+      <label>Type RESET to confirm</label><input type="text" name="confirm" autocomplete="off">
+      <div class="actions"><button class="btn danger" type="submit">Full reset</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

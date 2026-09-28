@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MockBank{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<header class="topbar">
+  <div class="inner">
+    <a class="logo" href="/">Mock<span>Bank</span></a>
+    <nav>
+      {% block nav %}
+      {% if customer %}
+      <a href="/accounts" class="{% if request.url.path.startswith('/accounts') %}active{% endif %}">Accounts</a>
+      <a href="/transfer" class="{% if request.url.path == '/transfer' %}active{% endif %}">Transfer</a>
+      <a href="/connected-apps" class="{% if request.url.path.startswith('/connected-apps') %}active{% endif %}">Connected apps</a>
+      {% endif %}
+      <a href="/guide">Developer guide</a>
+      <a href="/docs">API docs</a>
+      {% endblock %}
+    </nav>
+    <div class="user">
+      {% block user %}
+      {% if customer %}
+        <span>{{ customer.full_name }}</span>
+        <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small secondary" type="submit">Log out</button></form>
+      {% else %}
+        <a href="/login" class="btn small secondary">Log in</a>
+      {% endif %}
+      {% endblock %}
+    </div>
+  </div>
+</header>
+<main class="wrap {% block wrapclass %}{% endblock %}">
+  {% if flash %}<div class="flash {{ flash.level }}">{{ flash.message }}</div>{% endif %}
+  {% block content %}{% endblock %}
+  <div class="footer">MockBank is a teaching simulation. No real money exists here. Version {{ version }}.</div>
+</main>
+</body>
+</html>

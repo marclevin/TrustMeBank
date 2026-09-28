@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Payment {{ payment.status }}{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Payment <span class="badge {{ payment.status }}">{{ payment.status }}</span></h1>
+  <p>{{ payment.amount|rand }} to {{ payment.creditor_name }} ({{ payment.creditor_account_number }}), reference {{ payment.reference }}.</p>
+  {% if payment.status == 'COMPLETED' %}<p>The money has been transferred. {{ payment.application.name }} has been notified.</p>
+  {% elif payment.status == 'PROCESSING' %}<p>The payment is being processed. {{ payment.application.name }} will be notified when it settles.</p>
+  {% elif payment.status == 'FAILED' %}<p>The payment could not be completed: <strong>{{ payment.failure_reason }}</strong>.</p>
+  {% else %}<p>No money was moved.</p>{% endif %}
+  <p class="small muted">You can close this page and return to {{ payment.application.name }}.</p>
+  <p><a class="btn secondary" href="/accounts">Back to your accounts</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block title %}Applications{% endblock %}
+{% block content %}
+<h1>Applications (TPPs)</h1>
+<table>
+  <tr><th>Name</th><th>client_id</th><th>Owner</th><th>Webhook</th><th>Status</th></tr>
+  {% for a in applications %}
+  <tr>
+    <td><a href="/admin/applications/{{ a.id }}">{{ a.name }}</a></td>
+    <td><code>{{ a.id }}</code></td>
+    <td class="small">{{ a.owner_label }}</td>
+    <td class="small">{{ a.webhook_url or '' }}</td>
+    <td>{% if a.is_active %}<span class="badge ok">active</span>{% else %}<span class="badge bad">inactive</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Register an application</h2>
+<div class="card">
+  <p class="small muted">The client secret is shown once after registration. Optionally create a business customer with a settlement account for the team at the same time.</p>
+  <form method="post" action="/admin/applications">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="two-col">
+      <div>
+        <label>Application name</label><input type="text" name="name" placeholder="RemitX" required>
+        <div class="help">Shown to customers on the consent and payment screens.</div>
+        <label>Owner / team</label><input type="text" name="owner_label" placeholder="Team 4: Alice, Bob">
+        <label>Redirect URIs (one per line)</label>
+        <textarea name="redirect_uris" placeholder="http://localhost:5000/callback&#10;http://localhost:5000/payments/return" required></textarea>
+        <div class="help">Exact match required for OAuth and payment redirects.</div>
+        <label>Webhook URL</label><input type="url" name="webhook_url" placeholder="https://team4.example/webhooks/mockbank">
+        <label><input type="checkbox" name="send_transaction_events" value="1"> Also send <code>transaction.created</code> events</label>
+      </div>
+      <div>
+        <h3 style="margin-top:0">Settlement account (optional)</h3>
+        <label>Business customer email</label><input type="email" name="settlement_email" placeholder="team4-ops@example.com">
+        <div class="help">Creates a business customer "&lt;name&gt; (Pty) Ltd" with a settlement account. The team logs in as this customer to consent to their own app and read the settlement account.</div>
+        <label>Password</label><input type="text" name="settlement_password" placeholder="leave blank to generate">
+        <label>Opening balance</label><input type="text" name="settlement_opening_balance" value="0.00">
+      </div>
+    </div>
+    <div class="actions"><button class="btn" type="submit">Register application</button></div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Delivery {{ d.id }}{% endblock %}
+{% block content %}
+<p><a href="/admin/webhooks">&larr; Webhook deliveries</a></p>
+<h1>{{ d.id }} <span class="badge {{ d.status }}">{{ d.status }}</span></h1>
+<div class="two-col">
+  <div class="card">
+    <dl class="kv">
+      <dt>Application</dt><dd><a href="/admin/applications/{{ d.application_id }}">{{ d.application.name }}</a></dd>
+      <dt>Event</dt><dd>{{ d.event_type }}</dd>
+      <dt>Payment</dt><dd>{% if d.payment_id %}<a href="/admin/payments/{{ d.payment_id }}">{{ d.payment_id }}</a>{% endif %}</dd>
+      <dt>URL</dt><dd>{{ d.url }}</dd>
+      <dt>Attempts</dt><dd>{{ d.attempts }}</dd>
+      <dt>Next attempt</dt><dd>{% if d.status == 'pending' %}{{ d.next_attempt_at|dt }}{% endif %}</dd>
+      <dt>Last attempt</dt><dd>{{ d.last_attempt_at|dt }}</dd>
+      <dt>Last status</dt><dd>{{ d.last_status_code or '' }} {{ d.last_error or '' }}</dd>
+      <dt>Delivered</dt><dd>{{ d.delivered_at|dt }}</dd>
+    </dl>
+    <form method="post" action="/admin/webhooks/{{ d.id }}/retry">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <button class="btn" type="submit">Retry now</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Payload</h3>
+    <pre>{{ d.payload }}</pre>
+    {% if d.last_response_body %}<h3>Last response body</h3><pre>{{ d.last_response_body }}</pre>{% endif %}
+  </div>
+</div>
+<h2>Attempts</h2>
+<table><tr><th>Time</th><th>Action</th><th>Details</th></tr>
+{% for e in log %}<tr><td class="small">{{ e.created_at|dt }}</td><td>{{ e.action }}</td><td class="small"><code>{{ e.details }}</code></td></tr>{% endfor %}
+</table>
+{% endblock %}

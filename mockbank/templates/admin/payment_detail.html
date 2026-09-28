@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Payment {{ p.id }}{% endblock %}
+{% block content %}
+<p><a href="/admin/payments">&larr; Payments</a></p>
+<h1>{{ p.id }} <span class="badge {{ p.status }}">{{ p.status }}</span></h1>
+<div class="two-col">
+  <div class="card">
+    <dl class="kv">
+      <dt>Application</dt><dd><a href="/admin/applications/{{ p.application_id }}">{{ p.application.name }}</a></dd>
+      <dt>Consent</dt><dd><code>{{ p.consent_id }}</code></dd>
+      <dt>From</dt><dd>{{ p.debtor_account.account_number }} ({{ p.debtor_account.customer.full_name }})</dd>
+      <dt>To</dt><dd>{{ p.creditor_account_number }} ({{ p.creditor_name }})</dd>
+      <dt>Amount</dt><dd><strong>{{ p.amount|rand }}</strong></dd>
+      <dt>Reference</dt><dd>{{ p.reference }}</dd>
+      <dt>Failure reason</dt><dd>{{ p.failure_reason or '' }}</dd>
+      <dt>Idempotency key</dt><dd><code>{{ p.idempotency_key or '' }}</code></dd>
+      <dt>Redirect URI</dt><dd>{{ p.redirect_uri or '' }}</dd>
+      <dt>Authorisation URL</dt><dd>{{ base_url }}/payments/{{ p.id }}/authorise</dd>
+      <dt>Journal</dt><dd><code>{{ p.journal_id or '' }}</code></dd>
+      <dt>Created</dt><dd>{{ p.created_at|dt }}</dd>
+      <dt>Authorised</dt><dd>{{ p.authorised_at|dt }}</dd>
+      <dt>Completed</dt><dd>{{ p.completed_at|dt }}</dd>
+    </dl>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Ledger transactions</h3>
+    {% if transactions %}<table><tr><th>Txn</th><th>Account</th><th class="num">Amount</th><th class="num">Balance after</th></tr>
+    {% for t in transactions %}<tr><td><code>{{ t.id }}</code></td><td>{{ t.account.account_number }}</td><td class="num">{{ t.amount|rand }}</td><td class="num">{{ t.balance_after|rand }}</td></tr>{% endfor %}</table>
+    {% else %}<p class="muted">No ledger entries (payment not settled).</p>{% endif %}
+    <h3>Webhook deliveries</h3>
+    {% if deliveries %}<table><tr><th>Delivery</th><th>Event</th><th>Status</th><th>Attempts</th></tr>
+    {% for d in deliveries %}<tr><td><a href="/admin/webhooks/{{ d.id }}">{{ d.id }}</a></td><td>{{ d.event_type }}</td><td><span class="badge {{ d.status }}">{{ d.status }}</span></td><td>{{ d.attempts }}</td></tr>{% endfor %}</table>
+    {% else %}<p class="muted">None.</p>{% endif %}
+  </div>
+</div>
+<h2>Audit trail</h2>
+<table><tr><th>Time</th><th>Actor</th><th>Action</th><th>Details</th></tr>
+{% for e in log %}<tr><td class="small">{{ e.created_at|dt }}</td><td class="small">{{ e.actor_type }} {{ e.actor_id or '' }}</td><td>{{ e.action }}</td><td class="small"><code>{{ e.details }}</code></td></tr>{% endfor %}
+</table>
+{% endblock %}

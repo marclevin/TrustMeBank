@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Your accounts{% endblock %}
+{% block content %}
+<h1>Your accounts</h1>
+{% if pending_payments %}
+<div class="card consent-box">
+  <strong>Payments waiting for your approval</strong>
+  <ul>
+  {% for p in pending_payments %}
+    <li><a href="/payments/{{ p.id }}/authorise">{{ p.application.name }} wants to pay {{ p.amount|rand }} to {{ p.creditor_name }} ({{ p.reference }})</a></li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+<div class="grid">
+{% for a in accounts %}
+  <a class="card account-card" href="/accounts/{{ a.id }}">
+    <div class="name">{{ a.name }}</div>
+    <div class="number">{{ a.account_number }} &middot; {{ a.account_type }}{% if a.status != 'active' %} &middot; {{ a.status }}{% endif %}</div>
+    <div class="balance">{{ a.balance|rand }}</div>
+  </a>
+{% endfor %}
+</div>
+<p class="muted">Total across accounts: <strong>{{ total|rand }}</strong></p>
+{% endblock %}

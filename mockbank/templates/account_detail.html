@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ account.name }}{% endblock %}
+{% block content %}
+<p><a href="/accounts">&larr; All accounts</a></p>
+<div class="card">
+  <div class="muted">{{ account.name }} &middot; {{ account.account_number }} &middot; {{ account.currency }}</div>
+  <div class="amount-big">{{ account.balance|rand }}</div>
+  <div class="small muted">Account id for developers: <code>{{ account.id }}</code></div>
+</div>
+<h2>Transactions</h2>
+{% if transactions %}
+<table>
+  <tr><th>Date</th><th>Description</th><th>Counterparty</th><th>Reference</th><th class="num">Amount</th><th class="num">Balance</th></tr>
+  {% for t in transactions %}
+  <tr>
+    <td class="small">{{ t.booked_at|dt }}</td>
+    <td>{{ t.description }}{% if t.journal.payment_id %} <span class="badge">payment</span>{% endif %}</td>
+    <td class="small">{{ t.counterparty_name }}<br><span class="muted">{{ t.counterparty_account_number }}</span></td>
+    <td class="small">{{ t.reference or '' }}</td>
+    <td class="num {{ 'credit' if t.amount > 0 else 'debit' }}">{{ t.amount|rand }}</td>
+    <td class="num muted">{{ t.balance_after|rand }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<p class="small muted">Showing the most recent {{ transactions|length }} transactions.</p>
+{% else %}
+<p class="muted">No transactions yet.</p>
+{% endif %}
+{% endblock %}

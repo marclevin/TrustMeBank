@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% block title %}Consents{% endblock %}
+{% block content %}
+<h1>Consents</h1>
+<table>
+  <tr><th>Consent</th><th>Customer</th><th>Application</th><th>Scopes</th><th>Status</th><th>Granted</th><th>Expires</th><th></th></tr>
+  {% for k in consents %}
+  <tr>
+    <td><code>{{ k.id }}</code></td>
+    <td><a href="/admin/customers/{{ k.customer_id }}">{{ k.customer.full_name }}</a></td>
+    <td><a href="/admin/applications/{{ k.application_id }}">{{ k.application.name }}</a></td>
+    <td class="small">{{ k.scopes|join(' ') }}</td>
+    <td><span class="badge {{ k.status }}">{{ k.status }}</span></td>
+    <td class="small">{{ k.created_at|dt }}</td><td class="small">{{ k.expires_at|dt }}</td>
+    <td>{% if k.status == 'active' %}<form method="post" action="/admin/consents/{{ k.id }}/revoke"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn small danger">Revoke</button></form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

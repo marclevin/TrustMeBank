@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Transfer money{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Transfer money</h1>
+  <p class="lead">Pay any MockBank account number. Use a reference so the recipient can reconcile it.</p>
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+  <form method="post" action="/transfer">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label for="from_account_id">From</label>
+    <select id="from_account_id" name="from_account_id">
+      {% for a in accounts %}
+      <option value="{{ a.id }}" {% if form.from_account_id == a.id %}selected{% endif %}>{{ a.name }} ({{ a.account_number }}) {{ a.balance|rand }}</option>
+      {% endfor %}
+    </select>
+    <label for="to_account_number">To account number</label>
+    <input type="text" id="to_account_number" name="to_account_number" value="{{ form.to_account_number or '' }}" placeholder="1000987654" pattern="[0-9]{10}" required>
+    <div class="help">The seeded RemitX settlement account is <code>1000987654</code>.</div>
+    <label for="amount">Amount (ZAR)</label>
+    <input type="text" id="amount" name="amount" value="{{ form.amount or '' }}" placeholder="500.00" inputmode="decimal" required>
+    <label for="reference">Reference</label>
+    <input type="text" id="reference" name="reference" value="{{ form.reference or '' }}" maxlength="35" placeholder="Optional, up to 35 characters">
+    <div class="actions"><button class="btn" type="submit">Send money</button></div>
+  </form>
+</div>
+{% endblock %}

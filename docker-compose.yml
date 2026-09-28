@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mockbank
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mockbank}
+      POSTGRES_DB: mockbank
+    volumes:
+      - mockbank-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mockbank -d mockbank"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    ports:
+      - "${MOCKBANK_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://mockbank:${POSTGRES_PASSWORD:-mockbank}@db:5432/mockbank
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
+      ALLOW_NEGATIVE_BALANCES: ${ALLOW_NEGATIVE_BALANCES:-false}
+      PAYMENT_PROCESSING_DELAY_SECONDS: ${PAYMENT_PROCESSING_DELAY_SECONDS:-0}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    extra_hosts:
+      # Lets a webhook URL of http://host.docker.internal:PORT reach an app on the host machine.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mockbank-db:

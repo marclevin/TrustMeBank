@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Authorise payment{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="card consent-box">
+  {% if payment.status == 'AWAITING_AUTHORISATION' %}
+  <h1>{{ payment.application.name }} wants to make the following payment</h1>
+  <dl class="kv">
+    <dt>From</dt><dd>{{ payment.debtor_account.name }} ({{ payment.debtor_account.account_number }})<br><span class="small muted">Available: {{ payment.debtor_account.balance|rand }}</span></dd>
+    <dt>To</dt><dd>{{ payment.creditor_account_number }}<br><span class="small muted">{{ payment.creditor_name }}</span></dd>
+    <dt>Amount</dt><dd><strong>{{ payment.amount|rand }}</strong></dd>
+    <dt>Reference</dt><dd>{{ payment.reference }}</dd>
+  </dl>
+  <form method="post" action="/payments/{{ payment.id }}/authorise">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="actions">
+      <button class="btn" type="submit" name="decision" value="approve">Approve</button>
+      <button class="btn secondary" type="submit" name="decision" value="reject">Reject</button>
+    </div>
+  </form>
+  {% else %}
+  <h1>Payment {{ payment.status|lower|replace('_', ' ') }}</h1>
+  <p>This payment of <strong>{{ payment.amount|rand }}</strong> to {{ payment.creditor_name }} ({{ payment.reference }})
+     has already been handled. Status: <span class="badge {{ payment.status }}">{{ payment.status }}</span>
+     {% if payment.failure_reason %}<span class="muted">({{ payment.failure_reason }})</span>{% endif %}</p>
+  {% if payment.redirect_uri %}<p><a class="btn" href="{{ payment.redirect_uri }}?payment_id={{ payment.id }}&status={{ payment.status }}">Return to {{ payment.application.name }}</a></p>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

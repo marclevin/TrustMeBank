@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<form method="get" action="/admin/audit" class="card tight" style="display:flex;gap:10px;align-items:center">
+  <input type="text" name="action" value="{{ action or '' }}" placeholder="filter by action prefix, e.g. payment." style="max-width:360px">
+  <button class="btn small" type="submit">Filter</button>
+</form>
+<table>
+  <tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>IP</th><th>Details</th></tr>
+  {% for e in entries %}
+  <tr>
+    <td class="small">{{ e.created_at|dt }}</td>
+    <td class="small">{{ e.actor_type }}<br>{{ e.actor_id or '' }}</td>
+    <td>{{ e.action }}</td>
+    <td class="small">{{ e.target_type or '' }}<br><code>{{ e.target_id or '' }}</code></td>
+    <td class="small">{{ e.ip or '' }}</td>
+    <td class="small"><code>{{ e.details }}</code></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
