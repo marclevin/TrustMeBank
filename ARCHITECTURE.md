@@ -29,7 +29,7 @@ understandable. Anything that does not serve them was left out.
 | Passwords | bcrypt | Standard |
 | HTTP client | httpx | Used for webhook delivery and tests |
 | Background work | One thread inside the app process | No Redis, no Celery. See section 6 |
-| Packaging | pip and `pyproject.toml`, pinned `requirements.txt` | Reproducible Docker builds |
+| Packaging | `pyproject.toml` with a pinned `requirements.txt`; the Docker image runs the source tree directly | Reproducible builds, no package build step |
 | Deployment | Docker Compose: `db` and `app` | `docker compose up` is the whole story |
 
 FastAPI endpoints are plain `def` functions. FastAPI runs them in a thread pool, so the

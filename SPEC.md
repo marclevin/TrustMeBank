@@ -654,7 +654,7 @@ Browser routes render HTML error pages.
   idempotent through the status check under a row lock and the unique `journals.payment_id`.
 - Webhooks are HMAC-SHA256 signed with a per application secret.
 - Rate limiting: 300 API requests per minute per token or IP, 20 login attempts per minute per
-  IP, 60 token requests per minute per client. In memory, per process.
+  IP, 60 token requests per minute per IP. In memory, per process.
 - Audit log records logins, consents, payments, admin actions and webhook outcomes.
 - Secrets come from environment variables: `SECRET_KEY`, `ADMIN_PASSWORD`, `DATABASE_URL`.
 - The deployment is assumed to sit behind HTTPS in production (`SESSION_COOKIE_SECURE=true`).

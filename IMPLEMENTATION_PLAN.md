@@ -1,5 +1,9 @@
 # MockBank Implementation Plan
 
+**Status: all milestones complete.** The test suite (78 tests) covers every milestone's
+acceptance criteria, and both example applications have been driven end to end against a
+running instance, including webhook delivery from the background worker.
+
 Development is divided into milestones. Each milestone leaves the repository in a working,
 tested state and ends with a commit. Later milestones do not require rework of earlier ones.
 
